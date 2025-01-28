@@ -2,7 +2,7 @@
 const { Assistant, User } = require('../models');
 const openaiService = require('../middleware/openai');  // Importar configuración de OpenAI
 
-// Obtener información de un asistente y guardarla en la base de datos
+// Obtener información de un asistente y compararla con la base de datos
 const getAssistantData = async (req, res) => {
   try {
     const { assistantId } = req.params;  // Suponiendo que el ID de asistente viene por parámetro
@@ -10,28 +10,38 @@ const getAssistantData = async (req, res) => {
     // Realizar la llamada a OpenAI para obtener los datos del asistente
     const response = await openaiService.getAssistantById(assistantId);
 
-    // Guardar los datos del asistente en la base de datos
-    const [assistant, created] = await Assistant.upsert({
-      id: response.id,
-      name: response.name,
-      description: response.description,
-      model: response.model,
-      instructions: response.instructions,
-    });
+    // Obtener el asistente de la base de datos
+    const assistant = await Assistant.findByPk(assistantId);
 
-    // Guardar los prompts asociados al asistente
-    if (response.instructions) {
-      const prompt = await Prompt.create({
-        assistantId: response.id,
-        content: response.instructions,
-        name: `${response.name} Prompt`,
-        version: 1,
-        isActive: true
+    // Comparar y actualizar si hay cambios
+    if (!assistant || assistant.name !== response.name || assistant.description !== response.description || assistant.model !== response.model || assistant.instructions !== response.instructions) {
+      await Assistant.upsert({
+        id: response.id,
+        name: response.name,
+        description: response.description,
+        model: response.model,
+        instructions: response.instructions,
       });
-      console.log('Prompt guardado en la base de datos:', prompt);
+
+      // Guardar los prompts asociados al asistente
+      if (response.instructions) {
+        const lastPrompt = await Prompt.findOne({
+          where: { assistantId: response.id },
+          order: [['version', 'DESC']],
+        });
+        const version = (lastPrompt?.version || 0) + 1;
+
+        await Prompt.create({
+          assistantId: response.id,
+          content: response.instructions,
+          name: `${response.name} Prompt v${version}`,
+          version,
+          isActive: true,
+        });
+      }
     }
 
-    res.status(200).json(assistant);
+    res.status(200).json(response);
   } catch (error) {
     console.error('Error obteniendo los datos del asistente:', error);
     res.status(500).json({ message: 'Error al obtener los datos del asistente' });
@@ -91,12 +101,40 @@ const getUserAssistants = async (req, res) => {
   }
 };
 
-// Obtener todos los asistentes
+// Obtener todos los asistentes y guardarlos en la base de datos
 const getAllAssistants = async (req, res) => {
   const { limit = 20, order = 'desc' } = req.query;
 
   try {
     const response = await openaiService.listAssistants(limit, order);
+
+    // Guardar los asistentes en la base de datos
+    for (const assistantData of response) {
+      const [assistant, created] = await Assistant.upsert({
+        id: assistantData.id,
+        name: assistantData.name,
+        description: assistantData.description,
+        model: assistantData.model,
+        instructions: assistantData.instructions,
+      });
+
+      // Guardar los prompts asociados al asistente
+      if (assistantData.instructions) {
+        const lastPrompt = await Prompt.findOne({
+          where: { assistantId: assistantData.id },
+          order: [['version', 'DESC']],
+        });
+        const version = (lastPrompt?.version || 0) + 1;
+
+        await Prompt.create({
+          assistantId: assistantData.id,
+          content: assistantData.instructions,
+          name: `${assistantData.name} Prompt v${version}`,
+          version,
+          isActive: true,
+        });
+      }
+    }
 
     res.status(200).json(response);
   } catch (error) {
