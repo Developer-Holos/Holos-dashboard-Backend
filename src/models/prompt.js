@@ -15,7 +15,7 @@ const Prompt = sequelize.define('Prompt', {
         allowNull: false,
     },
     assistantId: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         allowNull: false,
     },
     isActive: {
