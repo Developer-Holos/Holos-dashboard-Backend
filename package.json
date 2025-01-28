@@ -1,0 +1,21 @@
+{
+  "name": "proyetco-holos",
+  "version": "1.0.0",
+  "description": "proyect for IA clients for HOLOS",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/server.js"
+  },
+  "author": "Jose Arenas Conde",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.7",
+    "mysql2": "^3.12.0",
+    "openai": "^4.80.1",
+    "sequelize": "^6.37.5",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
+  }
+}
