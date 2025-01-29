@@ -110,10 +110,6 @@ const getAllAssistants = async (req, res) => {
 
   try {
     const response = await openaiService.listAssistants(limit, order);
-
-    // Log para ver la respuesta
-    console.log('Respuesta de OpenAI:', response);
-
     // Verificar si response.data es un array
     if (!Array.isArray(response.data)) {
       throw new TypeError('La respuesta de OpenAI no es un array');

@@ -1,5 +1,6 @@
 const express = require('express');
 const { createPrompt, getPromptsByAssistant, deletePrompt, usePreviousVersion, getPromptById } = require('../controllers/promptsController');
+const authenticateJWT = require('../middleware/auth');
 const router = express.Router();
 
 /**
@@ -35,13 +36,15 @@ const router = express.Router();
  *               name:
  *                 type: string
  *                 description: Nombre de la versión del prompt
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       201:
  *         description: Prompt creado exitosamente
  *       500:
  *         description: Error al crear el prompt
  */
-router.post('/assistant/:assistantId', createPrompt); // Crear un prompt
+router.post('/assistant/:assistantId', authenticateJWT, createPrompt); // Crear un prompt
 
 /**
  * @swagger
@@ -56,13 +59,15 @@ router.post('/assistant/:assistantId', createPrompt); // Crear un prompt
  *           type: string
  *         required: true
  *         description: ID del asistente
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Lista de prompts
  *       500:
  *         description: Error al obtener los prompts
  */
-router.get('/assistant/:assistantId', getPromptsByAssistant); // Obtener prompts por ID de asistente
+router.get('/assistant/:assistantId', authenticateJWT, getPromptsByAssistant); // Obtener prompts por ID de asistente
 
 /**
  * @swagger
@@ -77,6 +82,8 @@ router.get('/assistant/:assistantId', getPromptsByAssistant); // Obtener prompts
  *           type: string
  *         required: true
  *         description: ID del prompt
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Datos del prompt
@@ -85,7 +92,7 @@ router.get('/assistant/:assistantId', getPromptsByAssistant); // Obtener prompts
  *       500:
  *         description: Error al obtener el prompt
  */
-router.get('/:id', getPromptById); // Obtener un prompt por ID
+router.get('/:id', authenticateJWT, getPromptById); // Obtener un prompt por ID
 
 /**
  * @swagger
@@ -100,6 +107,8 @@ router.get('/:id', getPromptById); // Obtener un prompt por ID
  *           type: string
  *         required: true
  *         description: ID del prompt
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       204:
  *         description: Prompt eliminado exitosamente
@@ -108,7 +117,7 @@ router.get('/:id', getPromptById); // Obtener un prompt por ID
  *       500:
  *         description: Error al eliminar el prompt
  */
-router.delete('/:id', deletePrompt); // Eliminar un prompt por ID
+router.delete('/:id', authenticateJWT, deletePrompt); // Eliminar un prompt por ID
 
 /**
  * @swagger
@@ -123,6 +132,8 @@ router.delete('/:id', deletePrompt); // Eliminar un prompt por ID
  *           type: string
  *         required: true
  *         description: ID del prompt
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Prompt activado exitosamente
@@ -131,6 +142,6 @@ router.delete('/:id', deletePrompt); // Eliminar un prompt por ID
  *       500:
  *         description: Error al activar el prompt
  */
-router.put('/use/:id', usePreviousVersion); // Usar una versión anterior de un prompt
+router.put('/use/:id', authenticateJWT, usePreviousVersion); // Usar una versión anterior de un prompt
 
 module.exports = router;

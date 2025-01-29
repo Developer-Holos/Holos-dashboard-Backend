@@ -1,3 +1,4 @@
+// filepath: /c:/Users/JOSE/Documents/GitHub/Holos-dashboard-Backend/src/swagger.js
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 
@@ -13,6 +14,20 @@ const swaggerOptions = {
     servers: [
       {
         url: 'http://localhost:3000/api', // URL base de tu API
+      },
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
+    security: [
+      {
+        bearerAuth: [],
       },
     ],
   },

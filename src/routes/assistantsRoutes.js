@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const assistantController = require('../controllers/assistantController');
+const authenticateJWT = require('../middleware/auth');
+
 /**
  * @swagger
  * tags:
@@ -21,13 +23,15 @@ const assistantController = require('../controllers/assistantController');
  *           type: string
  *         required: true
  *         description: ID del asistente
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Datos del asistente
  *       500:
  *         description: Error al obtener los datos del asistente
  */
-router.get('/:assistantId', assistantController.getAssistantData);
+router.get('/:assistantId', authenticateJWT, assistantController.getAssistantData);
 
 /**
  * @swagger
@@ -52,13 +56,15 @@ router.get('/:assistantId', assistantController.getAssistantData);
  *               newData:
  *                 type: object
  *                 description: Nuevos datos del asistente
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Datos del asistente actualizados
  *       500:
  *         description: Error al actualizar los datos del asistente
  */
-router.put('/:assistantId', assistantController.updateAssistantData);
+router.put('/:assistantId', authenticateJWT, assistantController.updateAssistantData);
 
 /**
  * @swagger
@@ -74,9 +80,11 @@ router.put('/:assistantId', assistantController.updateAssistantData);
  *             type: object
  *             properties:
  *               userId:
- *                 type: string
+ *                 type: integer
  *               assistantId:
  *                 type: string
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Asistente asociado al usuario
@@ -85,7 +93,7 @@ router.put('/:assistantId', assistantController.updateAssistantData);
  *       500:
  *         description: Error al asociar el asistente al usuario
  */
-router.post('/', assistantController.associateAssistantToUser);
+router.post('/', authenticateJWT, assistantController.associateAssistantToUser);
 
 /**
  * @swagger
@@ -97,9 +105,11 @@ router.post('/', assistantController.associateAssistantToUser);
  *       - in: path
  *         name: userId
  *         schema:
- *           type: string
+ *           type: integer
  *         required: true
  *         description: ID del usuario
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Lista de asistentes del usuario
@@ -108,7 +118,7 @@ router.post('/', assistantController.associateAssistantToUser);
  *       500:
  *         description: Error al obtener los asistentes del usuario
  */
-router.get('/users/:userId/assistants', assistantController.getUserAssistants);
+router.get('/users/:userId/assistants', authenticateJWT, assistantController.getUserAssistants);
 
 /**
  * @swagger
@@ -127,13 +137,15 @@ router.get('/users/:userId/assistants', assistantController.getUserAssistants);
  *         schema:
  *           type: string
  *         description: Orden de los resultados
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Lista de asistentes
  *       500:
  *         description: Error al obtener los asistentes
  */
-router.get('/', assistantController.getAllAssistants);
+router.get('/', authenticateJWT, assistantController.getAllAssistants);
 
 /**
  * @swagger
@@ -158,6 +170,8 @@ router.get('/', assistantController.getAllAssistants);
  *               instructions:
  *                 type: string
  *                 description: Nuevo prompt
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Prompt del asistente actualizado
@@ -166,7 +180,7 @@ router.get('/', assistantController.getAllAssistants);
  *       500:
  *         description: Error al actualizar el prompt del asistente
  */
-router.put('/:assistantId/prompt', assistantController.updateAssistantPrompt);
+router.put('/:assistantId/prompt', authenticateJWT, assistantController.updateAssistantPrompt);
 
 /**
  * @swagger
@@ -192,6 +206,8 @@ router.put('/:assistantId/prompt', assistantController.updateAssistantPrompt);
  *                 type: string
  *                 format: binary
  *                 description: Archivo para subir
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Archivo del asistente actualizado
@@ -200,6 +216,6 @@ router.put('/:assistantId/prompt', assistantController.updateAssistantPrompt);
  *       500:
  *         description: Error al actualizar el archivo del asistente
  */
-router.put('/:assistantId/file', assistantController.updateAssistantFile);
+router.put('/:assistantId/file', authenticateJWT, assistantController.updateAssistantFile);
 
 module.exports = router;

@@ -1,34 +1,15 @@
+// filepath: /c:/Users/JOSE/Documents/GitHub/Holos-dashboard-Backend/src/routes/usersRoutes.js
+const express = require('express');
+const router = express.Router();
+const usersController = require('../controllers/usersController');
+const authenticateJWT = require('../middleware/auth');
+
+
 /**
  * @swagger
- * components:
- *   schemas:
- *     User:
- *       type: object
- *       required:
- *         - name
- *         - username
- *         - password
- *       properties:
- *         id:
- *           type: integer
- *           description: ID del usuario
- *         name:
- *           type: string
- *           description: Nombre del usuario
- *         username:
- *           type: string
- *           description: Nombre de usuario único
- *         password:
- *           type: string
- *           description: Contraseña del usuario
- *         isAdmin:
- *           type: boolean
- *           description: Define si el usuario es administrador
- *       example:
- *         name: José Conde
- *         username: joseconde
- *         password: mysecurepassword
- *         isAdmin: false
+ * tags:
+ *   name: Users
+ *   description: Gestión de usuarios
  */
 
 /**
@@ -42,46 +23,119 @@
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/User'
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               username:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               isAdmin:
+ *                 type: boolean
  *     responses:
  *       201:
  *         description: Usuario creado exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/User'
  *       500:
- *         description: Error en el servidor
+ *         description: Error al crear el usuario
  */
+router.post('/', usersController.createUser);
+
+/**
+ * @swagger
+ * /users/register:
+ *   post:
+ *     summary: Registrar un nuevo usuario
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               username:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Usuario registrado exitosamente
+ *       500:
+ *         description: Error al registrar el usuario
+ */
+router.post('/register', usersController.register);
+
+/**
+ * @swagger
+ * /users/login:
+ *   post:
+ *     summary: Iniciar sesión
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Inicio de sesión exitoso
+ *       401:
+ *         description: Credenciales inválidas
+ *       404:
+ *         description: Usuario no encontrado
+ *       500:
+ *         description: Error al iniciar sesión
+ */
+router.post('/login', usersController.login);
 
 /**
  * @swagger
  * /users:
  *   get:
- *     summary: Obtener todos los usuarios (solo para admins)
+ *     summary: Obtener todos los usuarios
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Lista de usuarios
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/User'
- *       403:
- *         description: Acceso denegado
  *       500:
- *         description: Error en el servidor
+ *         description: Error al obtener los usuarios
  */
+router.get('/',authenticateJWT, usersController.getAllUsers);
 
-const express = require('express');
-const { createUser, getAllUsers, getUserAssistants } = require('../controllers/usersController');
-const router = express.Router();
-const { isAdmin } = require('../middleware/auth');
-
-router.post('/', createUser);
-router.get('/', isAdmin, getAllUsers);
-router.get('/:userId/assistants', getUserAssistants);
+/**
+ * @swagger
+ * /users/{userId}/assistants:
+ *   get:
+ *     summary: Obtener todos los asistentes de un usuario
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID del usuario
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de asistentes del usuario
+ *       404:
+ *         description: Usuario no encontrado
+ *       500:
+ *         description: Error al obtener los asistentes del usuario
+ */
+router.get('/:userId/assistants', authenticateJWT, usersController.getUserAssistants);
 
 module.exports = router;

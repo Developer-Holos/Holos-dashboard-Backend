@@ -1,15 +1,23 @@
-const { User } = require('../models');
+// filepath: /c:/Users/JOSE/Documents/GitHub/Holos-dashboard-Backend/src/middleware/auth.js
+const jwt = require('jsonwebtoken');
 
-exports.isAdmin = async (req, res, next) => {
-  const { userId } = req.headers;
+const authenticateJWT = (req, res, next) => {
+  const authHeader = req.headers.authorization;
 
-  try {
-    const user = await User.findByPk(userId);
-    if (!user || !user.isAdmin) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-    next();
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  if (authHeader) {
+    const token = authHeader.split(' ')[1];
+
+    jwt.verify(token, 'your_jwt_secret', (err, user) => {
+      if (err) {
+        return res.sendStatus(403);
+      }
+
+      req.user = user;
+      next();
+    });
+  } else {
+    res.sendStatus(401);
   }
 };
+
+module.exports = authenticateJWT;
