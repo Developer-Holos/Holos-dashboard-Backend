@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const setupSwaggerDocs = require('./swagger');
 const app = express();
 
 // Configurar CORS con opciones adicionales
@@ -15,6 +16,9 @@ app.use(cors(corsOptions));
 // Otros middlewares y configuraciones
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Configurar Swagger
+setupSwaggerDocs(app);
 
 // Rutas
 const usersRoutes = require('./routes/usersRoutes');
