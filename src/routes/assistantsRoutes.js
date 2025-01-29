@@ -64,7 +64,7 @@ router.put('/:assistantId', assistantController.updateAssistantData);
  * @swagger
  * /assistants:
  *   post:
- *     summary: Asociar un asistente a un usuario
+ *     summary: Asociar un asistente existente a un usuario
  *     tags: [Assistants]
  *     requestBody:
  *       required: true
@@ -75,13 +75,13 @@ router.put('/:assistantId', assistantController.updateAssistantData);
  *             properties:
  *               userId:
  *                 type: string
- *               name:
- *                 type: string
- *               description:
+ *               assistantId:
  *                 type: string
  *     responses:
- *       201:
- *         description: Asistente creado y asociado al usuario
+ *       200:
+ *         description: Asistente asociado al usuario
+ *       404:
+ *         description: Usuario o asistente no encontrado
  *       500:
  *         description: Error al asociar el asistente al usuario
  */

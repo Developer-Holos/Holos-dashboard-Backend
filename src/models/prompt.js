@@ -3,7 +3,7 @@ const sequelize = require('../config/database');
 
 const Prompt = sequelize.define('Prompt', {
     content: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT('long'), // Cambia el tipo de columna a TEXT largo
         allowNull: false,
     },
     version: {

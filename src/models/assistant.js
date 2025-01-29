@@ -22,6 +22,14 @@ const Assistant = sequelize.define("Assistant", {
         type: DataTypes.TEXT,
         allowNull: true,
     },
+    userId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+            model: 'Users',
+            key: 'id',
+        },
+    },
 });
 
 module.exports = Assistant;

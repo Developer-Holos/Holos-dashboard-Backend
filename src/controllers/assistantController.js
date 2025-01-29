@@ -1,5 +1,4 @@
-// filepath: /c:/Users/JOSE/Desktop/Proyetco-holos/src/controllers/assistantController.js
-const { Assistant, User } = require('../models');
+const { Assistant, User, Prompt } = require('../models'); // Importar el modelo Prompt
 const openaiService = require('../middleware/openai');  // Importar configuración de OpenAI
 
 // Obtener información de un asistente y compararla con la base de datos
@@ -48,7 +47,6 @@ const getAssistantData = async (req, res) => {
   }
 };
 
-
 // Actualizar los datos de un asistente
 const updateAssistantData = async (req, res) => {
   try {
@@ -72,14 +70,19 @@ const updateAssistantData = async (req, res) => {
 
 // Asociar un asistente a un usuario
 const associateAssistantToUser = async (req, res) => {
-  const { userId, name, description } = req.body;
+  const { userId, assistantId } = req.body;
 
   try {
     const user = await User.findByPk(userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const assistant = await Assistant.create({ userId, name, description });
-    res.status(201).json(assistant);
+    const assistant = await Assistant.findByPk(assistantId);
+    if (!assistant) return res.status(404).json({ error: 'Assistant not found' });
+
+    assistant.userId = userId;
+    await assistant.save();
+
+    res.status(200).json(assistant);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -101,15 +104,23 @@ const getUserAssistants = async (req, res) => {
   }
 };
 
-// Obtener todos los asistentes y guardarlos en la base de datos
+// Obtener todos los asistentes
 const getAllAssistants = async (req, res) => {
   const { limit = 20, order = 'desc' } = req.query;
 
   try {
     const response = await openaiService.listAssistants(limit, order);
 
+    // Log para ver la respuesta
+    console.log('Respuesta de OpenAI:', response);
+
+    // Verificar si response.data es un array
+    if (!Array.isArray(response.data)) {
+      throw new TypeError('La respuesta de OpenAI no es un array');
+    }
+
     // Guardar los asistentes en la base de datos
-    for (const assistantData of response) {
+    for (const assistantData of response.data) {
       const [assistant, created] = await Assistant.upsert({
         id: assistantData.id,
         name: assistantData.name,
@@ -136,7 +147,7 @@ const getAllAssistants = async (req, res) => {
       }
     }
 
-    res.status(200).json(response);
+    res.status(200).json(response.data);
   } catch (error) {
     console.error('Error obteniendo los asistentes:', error);
     res.status(500).json({ message: 'Error al obtener los asistentes' });
@@ -234,6 +245,6 @@ module.exports = {
   associateAssistantToUser,
   getUserAssistants,
   getAllAssistants,
-  updateAssistantPrompt, // Nueva función para prompt
-  updateAssistantFile, // Nueva función para archivos
+  updateAssistantPrompt,
+  updateAssistantFile,
 };
