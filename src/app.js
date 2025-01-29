@@ -1,20 +1,28 @@
 const express = require('express');
-const assistantsRoutes = require('./routes/assistantsRoutes');
-const promptsRoutes = require('./routes/promptsRoutes');
-const userRoutes = require('./routes/usersRoutes');
-const setupSwaggerDocs = require('./swagger'); // Importar configuración de Swagger
-
+const cors = require('cors');
 const app = express();
 
-// Middleware para JSON
+// Configurar CORS con opciones adicionales
+const corsOptions = {
+  origin: 'http://localhost:4200', // Permitir solicitudes desde este origen
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Métodos permitidos
+  allowedHeaders: 'Origin, X-Requested-With, Content-Type, Accept, Authorization', // Encabezados permitidos
+  credentials: true, // Permitir el envío de cookies y encabezados de autorización
+};
+
+app.use(cors(corsOptions));
+
+// Otros middlewares y configuraciones
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Rutas
-app.use('/api/users', userRoutes);
-app.use('/api/assistants', assistantsRoutes);
-app.use('/api/prompts', promptsRoutes);
+const usersRoutes = require('./routes/usersRoutes');
+const promptsRoutes = require('./routes/promptsRoutes');
+const assistantsRoutes = require('./routes/assistantsRoutes');
 
-// Configurar Swagger
-setupSwaggerDocs(app);
+app.use('/api/users', usersRoutes);
+app.use('/api/prompts', promptsRoutes);
+app.use('/api/assistants', assistantsRoutes);
 
 module.exports = app;
