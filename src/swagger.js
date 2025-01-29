@@ -13,7 +13,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: 'http://localhost:3000/api', // URL base de tu API
+        url: 'https://holos-dashboard-backend-production.up.railway.app/api', // URL base de tu API
       },
     ],
     components: {
@@ -38,7 +38,7 @@ const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
 const setupSwaggerDocs = (app) => {
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-  console.log('Swagger docs disponibles en http://localhost:3000/api-docs');
+  console.log('Swagger docs disponibles en https://holos-dashboard-backend-production.up.railway.app/api-docs');
 };
 
 module.exports = setupSwaggerDocs;
