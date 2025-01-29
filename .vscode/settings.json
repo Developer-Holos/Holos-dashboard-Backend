@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "undefined/subscriptions/00247cbc-eaa8-48bb-99c4-ecfa8620b773/resourceGroups/appsvc_linux_centralus_basic/providers/Microsoft.Web/sites/prod-holos-asisstant-backend",
+    "appService.deploySubpath": "."
+}
