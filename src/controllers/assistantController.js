@@ -149,8 +149,6 @@ const getAllAssistants = async (req, res) => {
     res.status(500).json({ message: 'Error al obtener los asistentes' });
   }
 };
-
-// Actualizar el prompt de un asistente
 const updateAssistantPrompt = async (req, res) => {
   const { assistantId } = req.params;
   const { instructions, promptName } = req.body; // Nuevo prompt y nombre opcional

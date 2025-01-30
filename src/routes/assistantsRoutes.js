@@ -170,6 +170,10 @@ router.get('/', authenticateJWT, assistantController.getAllAssistants);
  *               instructions:
  *                 type: string
  *                 description: Nuevo prompt
+ *                 required: true
+ *               promptName:
+ *                 type: string
+ *                 description: Nombre opcional del prompt
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -181,7 +185,6 @@ router.get('/', authenticateJWT, assistantController.getAllAssistants);
  *         description: Error al actualizar el prompt del asistente
  */
 router.put('/:assistantId/prompt', authenticateJWT, assistantController.updateAssistantPrompt);
-
 /**
  * @swagger
  * /assistants/{assistantId}/file:
