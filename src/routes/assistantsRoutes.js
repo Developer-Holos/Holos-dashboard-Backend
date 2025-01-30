@@ -169,19 +169,48 @@ router.get('/', authenticateJWT, assistantController.getAllAssistants);
  *             properties:
  *               instructions:
  *                 type: string
- *                 description: Nuevo prompt
+ *                 description: Instrucciones del nuevo prompt
  *               promptName:
  *                 type: string
- *                 description: Nombre opcional del prompt
+ *                 description: Nombre del nuevo prompt
+ *             required:
+ *               - instructions
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Prompt del asistente actualizado
+ *         description: Prompt actualizado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 assistant:
+ *                   type: object
+ *                   description: Datos del asistente actualizados
+ *                 prompt:
+ *                   type: object
+ *                   description: Datos del nuevo prompt
  *       400:
- *         description: El campo "instructions" es obligatorio
+ *         description: Error en la solicitud
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Mensaje de error
  *       500:
- *         description: Error al actualizar el prompt del asistente
+ *         description: Error del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Mensaje de error
  */
 router.put('/:assistantId/prompt', authenticateJWT, assistantController.updateAssistantPrompt);
 
