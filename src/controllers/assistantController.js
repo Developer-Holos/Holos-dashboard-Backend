@@ -13,11 +13,10 @@ const getAssistantData = async (req, res) => {
     const assistant = await Assistant.findByPk(assistantId);
 
     // Comparar y actualizar si hay cambios
-    if (!assistant || assistant.name !== response.name || assistant.description !== response.description || assistant.model !== response.model || assistant.instructions !== response.instructions) {
+    if (!assistant || assistant.name !== response.name || assistant.model !== response.model || assistant.instructions !== response.instructions) {
       await Assistant.upsert({
         id: response.id,
         name: response.name,
-        description: response.description,
         model: response.model,
         instructions: response.instructions,
       });
@@ -120,7 +119,6 @@ const getAllAssistants = async (req, res) => {
       const [assistant, created] = await Assistant.upsert({
         id: assistantData.id,
         name: assistantData.name,
-        description: assistantData.description,
         model: assistantData.model,
         instructions: assistantData.instructions,
       });

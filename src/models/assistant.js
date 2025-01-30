@@ -10,10 +10,6 @@ const Assistant = sequelize.define("Assistant", {
         type: DataTypes.STRING,
         allowNull: true,
     },
-    description: {
-        type: DataTypes.STRING,
-        allowNull: true,
-    },
     model: {
         type: DataTypes.STRING,
         allowNull: false,
