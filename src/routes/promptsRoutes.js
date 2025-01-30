@@ -1,5 +1,5 @@
 const express = require('express');
-const { createPrompt, getPromptsByAssistant, deletePrompt, usePreviousVersion, getPromptById } = require('../controllers/promptsController');
+const { createPrompt, getPromptsByAssistant, deletePrompt, usePreviousVersion, getPromptById, updatePrompt } = require('../controllers/promptsController');
 const authenticateJWT = require('../middleware/auth');
 const router = express.Router();
 
@@ -143,5 +143,43 @@ router.delete('/:id', authenticateJWT, deletePrompt); // Eliminar un prompt por 
  *         description: Error al activar el prompt
  */
 router.put('/use/:id', authenticateJWT, usePreviousVersion); // Usar una versión anterior de un prompt
+
+
+/** 
+ * @swagger
+ * /prompts/{id}:
+ *  put:
+ *   summary: Actualizar un prompt por ID
+ *  tags: [Prompts]
+ * parameters:
+ * - in: path
+ *  name: id
+ * schema:
+ * type: string
+ * required: true
+ * description: ID del prompt
+ * requestBody:
+ * required: true
+ * content:
+ * application/json:
+ * schema:
+ * type: object
+ * properties:
+ * content:
+ * type: string
+ * description: Contenido del prompt
+ * security:
+ * - bearerAuth: []
+ * responses:
+ * 201:
+ * description: Prompt actualizado exitosamente
+ * 404:
+ * description: Prompt no encontrado
+ * 500:
+ * description: Error al actualizar el prompt
+ */
+
+router.put('/:id', authenticateJWT, updatePrompt); // Actualizar un prompt por ID
+
 
 module.exports = router;
