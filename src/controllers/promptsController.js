@@ -39,6 +39,28 @@ exports.createPrompt = async (req, res) => {
   }
 };
 
+exports.updatePrompt = async (req, res) => {
+  const { id } = req.params;
+  const { content } = req.body;
+
+  try {
+    const prompt = await Prompt.findByPk(id);
+    if (!prompt) return res.status(404).json({ error: 'Prompt not found' });
+
+    const newVersion = prompt.version + 1;
+    const newPrompt = await Prompt.create({
+      assistantId: prompt.assistantId,
+      version: newVersion,
+      content,
+      name: prompt.name,
+    });
+
+    res.status(201).json(newPrompt);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 exports.deletePrompt = async (req, res) => {
   const { id } = req.params;
   try {
