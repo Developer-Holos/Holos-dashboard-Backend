@@ -149,7 +149,7 @@ const getAllAssistants = async (req, res) => {
 };
 const updateAssistantPrompt = async (req, res) => {
   const { assistantId } = req.params;
-  const { instructions, promptName } = req.body; // Nuevo prompt y nombre opcional
+  const { instructions, promptName, model, description, tools, tool_resources, metadata, temperature, top_p, response_format } = req.body; // Nuevos parámetros opcionales
 
   if (!instructions) {
     return res.status(400).json({ message: 'El campo "instructions" es obligatorio.' });
@@ -163,6 +163,14 @@ const updateAssistantPrompt = async (req, res) => {
     const updatedData = {
       ...existingAssistant,
       instructions,
+      model,
+      description,
+      tools,
+      tool_resources,
+      metadata,
+      temperature,
+      top_p,
+      response_format
     };
 
     const response = await openaiService.updateAssistant(assistantId, updatedData);
