@@ -12,6 +12,16 @@ const router = express.Router();
 
 /**
  * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ */
+
+/**
+ * @swagger
  * /prompts/assistant/{assistantId}:
  *   post:
  *     summary: Crear un nuevo prompt
@@ -143,6 +153,5 @@ router.delete('/:id', authenticateJWT, deletePrompt); // Eliminar un prompt por 
  *         description: Error al activar el prompt
  */
 router.put('/use/:id', authenticateJWT, usePreviousVersion); // Usar una versión anterior de un prompt
-
 
 module.exports = router;

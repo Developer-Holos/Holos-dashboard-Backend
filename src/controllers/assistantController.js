@@ -147,6 +147,7 @@ const getAllAssistants = async (req, res) => {
     res.status(500).json({ message: 'Error al obtener los asistentes' });
   }
 };
+
 const updateAssistantPrompt = async (req, res) => {
   const { assistantId } = req.params;
   const { instructions, promptName } = req.body;
@@ -164,22 +165,40 @@ const updateAssistantPrompt = async (req, res) => {
 
     const response = await openaiService.updateAssistant(assistantId, updatedData);
 
-    // Guardar el nuevo prompt en la base de datos
+    // Obtener el último prompt activo
     const lastPrompt = await Prompt.findOne({
-      where: { assistantId },
+      where: { assistantId, isActive: true },
       order: [['version', 'DESC']],
     });
-    const version = (lastPrompt?.version || 0) + 1;
 
-    const prompt = await Prompt.create({
-      assistantId,
-      content: instructions,
-      name: promptName || `${existingAssistant.name} Prompt v${version}`,
-      version,
-      isActive: true,
-    });
+    if (lastPrompt) {
+      // Desactivar el último prompt activo
+      await lastPrompt.update({ isActive: false });
 
-    res.status(200).json({ assistant: response, prompt });
+      // Crear una nueva versión del prompt
+      const version = lastPrompt.version + 1;
+      const prompt = await Prompt.create({
+        assistantId,
+        content: instructions,
+        name: promptName || `${existingAssistant.name} Prompt v${version}`,
+        version,
+        isActive: true,
+      });
+
+      res.status(200).json({ assistant: response, prompt });
+    } else {
+      // Crear el primer prompt si no existe ninguno
+      const version = 1;
+      const prompt = await Prompt.create({
+        assistantId,
+        content: instructions,
+        name: promptName || `${existingAssistant.name} Prompt v${version}`,
+        version,
+        isActive: true,
+      });
+
+      res.status(200).json({ assistant: response, prompt });
+    }
   } catch (error) {
     console.error('Error al actualizar el prompt del asistente:', error);
     res.status(500).json({ message: 'Error al actualizar el prompt del asistente.' });
