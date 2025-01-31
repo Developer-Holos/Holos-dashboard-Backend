@@ -50,6 +50,9 @@ const openaiService = {
             return response.data;
         } catch (error) {
             console.error('Error en updateAssistant:', error.response ? error.response.data : error.message);
+            if (error.response && error.response.data) {
+                console.error('Detalles del error:', error.response.data);
+            }
             throw error;
         }
     },
