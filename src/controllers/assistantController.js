@@ -160,7 +160,7 @@ const updateAssistantPrompt = async (req, res) => {
     const existingAssistant = await openaiService.getAssistantById(assistantId);
 
     // Actualizar solo el prompt
-    const updatedData = {
+    const { id, ...updatedData } = {
       ...existingAssistant,
       instructions,
       model,
