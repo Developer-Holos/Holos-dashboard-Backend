@@ -1,11 +1,7 @@
 const axios = require("axios");
 
-// Cargar las variables de entorno
-require('dotenv').config();
-
 const openaiService = {
-    listAssistants: async (limit = 20, order = "desc") => {
-        const apiKey = process.env.OPENAI_API_KEY;
+    listAssistants: async (apiKey, limit = 20, order = "desc") => {
         try {
             const response = await axios.get("https://api.openai.com/v1/assistants", {
                 headers: {
@@ -21,8 +17,7 @@ const openaiService = {
         }
     },
 
-    getAssistantById: async (assistantId) => {
-        const apiKey = process.env.OPENAI_API_KEY;
+    getAssistantById: async (apiKey, assistantId) => {
         try {
             const response = await axios.get(`https://api.openai.com/v1/assistants/${assistantId}`, {
                 headers: {
@@ -37,8 +32,7 @@ const openaiService = {
         }
     },
 
-    updateAssistant: async (assistantId, payload) => {
-        const apiKey = process.env.OPENAI_API_KEY;
+    updateAssistant: async (apiKey, assistantId, payload) => {
         try {
             const response = await axios.post(`https://api.openai.com/v1/assistants/${assistantId}`, payload, {
                 headers: {

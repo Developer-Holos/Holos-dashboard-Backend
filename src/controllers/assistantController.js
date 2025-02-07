@@ -5,9 +5,15 @@ const openaiService = require('../middleware/openai');  // Importar configuraci�
 const getAssistantData = async (req, res) => {
   try {
     const { assistantId } = req.params;  // Suponiendo que el ID de asistente viene por parámetro
+    const userId = req.user.id; // Obtener el ID del usuario autenticado
+    const user = await User.findByPk(userId);
+
+    if (!user || !user.apiKey) {
+      return res.status(403).json({ message: 'API key no encontrada para el usuario.' });
+    }
 
     // Realizar la llamada a OpenAI para obtener los datos del asistente
-    const response = await openaiService.getAssistantById(assistantId);
+    const response = await openaiService.getAssistantById(user.apiKey, assistantId);
 
     // Obtener el asistente de la base de datos
     const assistant = await Assistant.findByPk(assistantId);
@@ -19,6 +25,7 @@ const getAssistantData = async (req, res) => {
         name: response.name,
         model: response.model,
         instructions: response.instructions,
+        userId: userId, // Asociar el asistente al usuario
       });
 
       // Guardar los prompts asociados al asistente
@@ -51,9 +58,15 @@ const updateAssistantData = async (req, res) => {
   try {
     const { assistantId } = req.params;
     const { newData } = req.body;  // Datos que deseas actualizar en el asistente
+    const userId = req.user.id; // Obtener el ID del usuario autenticado
+    const user = await User.findByPk(userId);
+
+    if (!user || !user.apiKey) {
+      return res.status(403).json({ message: 'API key no encontrada para el usuario.' });
+    }
 
     // Llamada a OpenAI para actualizar datos
-    const response = await openaiService.updateAssistant(assistantId, newData);
+    const response = await openaiService.updateAssistant(user.apiKey, assistantId, newData);
 
     // Actualizar los datos del asistente en la base de datos
     const assistant = await Assistant.update(newData, {
@@ -64,26 +77,6 @@ const updateAssistantData = async (req, res) => {
   } catch (error) {
     console.error('Error actualizando los datos del asistente:', error);
     res.status(500).json({ message: 'Error al actualizar los datos del asistente' });
-  }
-};
-
-// Asociar un asistente a un usuario
-const associateAssistantToUser = async (req, res) => {
-  const { userId, assistantId } = req.body;
-
-  try {
-    const user = await User.findByPk(userId);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-
-    const assistant = await Assistant.findByPk(assistantId);
-    if (!assistant) return res.status(404).json({ error: 'Assistant not found' });
-
-    assistant.userId = userId;
-    await assistant.save();
-
-    res.status(200).json(assistant);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
   }
 };
 
@@ -106,9 +99,15 @@ const getUserAssistants = async (req, res) => {
 // Obtener todos los asistentes
 const getAllAssistants = async (req, res) => {
   const { limit = 20, order = 'desc' } = req.query;
+  const userId = req.user.id; // Obtener el ID del usuario autenticado
+  const user = await User.findByPk(userId);
+
+  if (!user || !user.apiKey) {
+    return res.status(403).json({ message: 'API key no encontrada para el usuario.' });
+  }
 
   try {
-    const response = await openaiService.listAssistants(limit, order);
+    const response = await openaiService.listAssistants(user.apiKey, limit, order);
     // Verificar si response.data es un array
     if (!Array.isArray(response.data)) {
       throw new TypeError('La respuesta de OpenAI no es un array');
@@ -121,6 +120,7 @@ const getAllAssistants = async (req, res) => {
         name: assistantData.name,
         model: assistantData.model,
         instructions: assistantData.instructions,
+        userId: userId, // Asociar el asistente al usuario
       });
 
       // Guardar los prompts asociados al asistente
@@ -151,6 +151,12 @@ const getAllAssistants = async (req, res) => {
 const updateAssistantPrompt = async (req, res) => {
   const { assistantId } = req.params;
   const { instructions, promptName } = req.body;
+  const userId = req.user.id; // Obtener el ID del usuario autenticado
+  const user = await User.findByPk(userId);
+
+  if (!user || !user.apiKey) {
+    return res.status(403).json({ message: 'API key no encontrada para el usuario.' });
+  }
 
   if (!instructions) {
     return res.status(400).json({ message: 'El campo "instructions" es obligatorio.' });
@@ -158,12 +164,12 @@ const updateAssistantPrompt = async (req, res) => {
 
   try {
     // Obtener el asistente actual
-    const existingAssistant = await openaiService.getAssistantById(assistantId);
+    const existingAssistant = await openaiService.getAssistantById(user.apiKey, assistantId);
 
     // Solo enviar las instrucciones actualizadas
     const updatedData = { instructions };
 
-    const response = await openaiService.updateAssistant(assistantId, updatedData);
+    const response = await openaiService.updateAssistant(user.apiKey, assistantId, updatedData);
 
     // Obtener el último prompt activo
     const lastPrompt = await Prompt.findOne({
@@ -208,6 +214,12 @@ const updateAssistantPrompt = async (req, res) => {
 const updateAssistantFile = async (req, res) => {
   const { assistantId } = req.params;
   const { file } = req.body; // Archivo para subir (debe ser procesado como un `file` en el frontend)
+  const userId = req.user.id; // Obtener el ID del usuario autenticado
+  const user = await User.findByPk(userId);
+
+  if (!user || !user.apiKey) {
+    return res.status(403).json({ message: 'API key no encontrada para el usuario.' });
+  }
 
   if (!file) {
     return res.status(400).json({ message: 'El archivo es obligatorio para actualizar el asistente.' });
@@ -223,7 +235,7 @@ const updateAssistantFile = async (req, res) => {
     const fileId = fileResponse.id;
 
     // Obtener el asistente actual
-    const existingAssistant = await openaiService.getAssistantById(assistantId);
+    const existingAssistant = await openaiService.getAssistantById(user.apiKey, assistantId);
 
     // Actualizar solo el `file_search` con el nuevo archivo
     const updatedData = {
@@ -238,7 +250,7 @@ const updateAssistantFile = async (req, res) => {
       ],
     };
 
-    const response = await openaiService.updateAssistant(assistantId, updatedData);
+    const response = await openaiService.updateAssistant(user.apiKey, assistantId, updatedData);
 
     res.status(200).json(response);
   } catch (error) {
@@ -250,7 +262,6 @@ const updateAssistantFile = async (req, res) => {
 module.exports = {
   getAssistantData,
   updateAssistantData,
-  associateAssistantToUser,
   getUserAssistants,
   getAllAssistants,
   updateAssistantPrompt,

@@ -4,11 +4,11 @@ const jwt = require('jsonwebtoken');
 
 // Crear usuario
 exports.createUser = async (req, res) => {
-  const { name, username, password, isAdmin } = req.body;
+  const { name, username, password, isAdmin, apiKey } = req.body;
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, username, password: hashedPassword, isAdmin });
+    const user = await User.create({ name, username, password: hashedPassword, isAdmin, apiKey });
     res.status(201).json(user);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -17,11 +17,11 @@ exports.createUser = async (req, res) => {
 
 // Registrar usuario
 exports.register = async (req, res) => {
-  const { name, username, password } = req.body;
+  const { name, username, password, apiKey } = req.body;
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, username, password: hashedPassword });
+    const user = await User.create({ name, username, password: hashedPassword, apiKey });
     res.status(201).json(user);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -40,7 +40,7 @@ exports.login = async (req, res) => {
     if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
 
     const token = jwt.sign({ id: user.id, isAdmin: user.isAdmin }, 'your_jwt_secret', { expiresIn: '1h' });
-    res.json({ token, userId: user.id, isAdmin: user.isAdmin });
+    res.json({ token, userId: user.id, isAdmin: user.isAdmin, apiKey: user.apiKey });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

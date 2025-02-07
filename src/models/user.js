@@ -19,6 +19,10 @@ const User = sequelize.define('User', {
     type: DataTypes.BOOLEAN,
     defaultValue: false, // false = usuario normal, true = administrador
   },
+  apiKey: {
+    type: DataTypes.STRING,
+    allowNull: true, // Puede ser nulo si el usuario no tiene un apiKey
+  },
 }, {
   timestamps: true,
 });
