@@ -178,20 +178,10 @@ const updateAssistantPrompt = async (req, res) => {
     });
 
     if (lastPrompt) {
-      // Desactivar el último prompt activo
-      await lastPrompt.update({ isActive: false });
+      // Actualizar el contenido del último prompt activo sin crear una nueva versión
+      await lastPrompt.update({ content: instructions, name: promptName || lastPrompt.name });
 
-      // Crear una nueva versión del prompt
-      const version = lastPrompt.version + 1;
-      const prompt = await Prompt.create({
-        assistantId,
-        content: instructions,
-        name: promptName || `${existingAssistant.name} Prompt v${version}`,
-        version,
-        isActive: true,
-      });
-
-      res.status(200).json({ assistant: response, prompt });
+      res.status(200).json({ assistant: response, prompt: lastPrompt });
     } else {
       // Crear el primer prompt si no existe ninguno
       const version = 1;
