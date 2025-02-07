@@ -28,8 +28,37 @@ const authenticateJWT = require('../middleware/auth');
  *     responses:
  *       200:
  *         description: Datos del asistente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 name:
+ *                   type: string
+ *                 model:
+ *                   type: string
+ *                 instructions:
+ *                   type: string
+ *       403:
+ *         description: API key no encontrada para el usuario
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       500:
  *         description: Error al obtener los datos del asistente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  */
 router.get('/:assistantId', authenticateJWT, assistantController.getAssistantData);
 
@@ -61,39 +90,39 @@ router.get('/:assistantId', authenticateJWT, assistantController.getAssistantDat
  *     responses:
  *       200:
  *         description: Datos del asistente actualizados
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 name:
+ *                   type: string
+ *                 model:
+ *                   type: string
+ *                 instructions:
+ *                   type: string
+ *       403:
+ *         description: API key no encontrada para el usuario
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       500:
  *         description: Error al actualizar los datos del asistente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  */
 router.put('/:assistantId', authenticateJWT, assistantController.updateAssistantData);
-
-/**
- * @swagger
- * /assistants:
- *   post:
- *     summary: Asociar un asistente existente a un usuario
- *     tags: [Assistants]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               userId:
- *                 type: integer
- *               assistantId:
- *                 type: string
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Asistente asociado al usuario
- *       404:
- *         description: Usuario o asistente no encontrado
- *       500:
- *         description: Error al asociar el asistente al usuario
- */
-router.post('/', authenticateJWT, assistantController.associateAssistantToUser);
 
 /**
  * @swagger
@@ -113,10 +142,39 @@ router.post('/', authenticateJWT, assistantController.associateAssistantToUser);
  *     responses:
  *       200:
  *         description: Lista de asistentes del usuario
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                   name:
+ *                     type: string
+ *                   model:
+ *                     type: string
+ *                   instructions:
+ *                     type: string
  *       404:
  *         description: Usuario no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
  *       500:
  *         description: Error al obtener los asistentes del usuario
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
  */
 router.get('/users/:userId/assistants', authenticateJWT, assistantController.getUserAssistants);
 
@@ -142,8 +200,39 @@ router.get('/users/:userId/assistants', authenticateJWT, assistantController.get
  *     responses:
  *       200:
  *         description: Lista de asistentes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                   name:
+ *                     type: string
+ *                   model:
+ *                     type: string
+ *                   instructions:
+ *                     type: string
+ *       403:
+ *         description: API key no encontrada para el usuario
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       500:
  *         description: Error al obtener los asistentes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  */
 router.get('/', authenticateJWT, assistantController.getAllAssistants);
 
@@ -200,7 +289,15 @@ router.get('/', authenticateJWT, assistantController.getAllAssistants);
  *               properties:
  *                 message:
  *                   type: string
- *                   description: Mensaje de error
+ *       403:
+ *         description: API key no encontrada para el usuario
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       500:
  *         description: Error del servidor
  *         content:
@@ -210,7 +307,6 @@ router.get('/', authenticateJWT, assistantController.getAllAssistants);
  *               properties:
  *                 message:
  *                   type: string
- *                   description: Mensaje de error
  */
 router.put('/:assistantId/prompt', authenticateJWT, assistantController.updateAssistantPrompt);
 
@@ -243,10 +339,46 @@ router.put('/:assistantId/prompt', authenticateJWT, assistantController.updateAs
  *     responses:
  *       200:
  *         description: Archivo del asistente actualizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 name:
+ *                   type: string
+ *                 model:
+ *                   type: string
+ *                 instructions:
+ *                   type: string
  *       400:
  *         description: El archivo es obligatorio para actualizar el asistente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       403:
+ *         description: API key no encontrada para el usuario
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       500:
  *         description: Error al actualizar el archivo del asistente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  */
 router.put('/:assistantId/file', authenticateJWT, assistantController.updateAssistantFile);
 

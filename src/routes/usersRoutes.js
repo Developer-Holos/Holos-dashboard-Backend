@@ -1,9 +1,7 @@
-// filepath: /c:/Users/JOSE/Documents/GitHub/Holos-dashboard-Backend/src/routes/usersRoutes.js
 const express = require('express');
 const router = express.Router();
 const usersController = require('../controllers/usersController');
 const authenticateJWT = require('../middleware/auth');
-
 
 /**
  * @swagger
@@ -33,6 +31,8 @@ const authenticateJWT = require('../middleware/auth');
  *                 type: string
  *               isAdmin:
  *                 type: boolean
+ *               apiKey:
+ *                 type: string
  *     responses:
  *       201:
  *         description: Usuario creado exitosamente
@@ -59,6 +59,8 @@ router.post('/', usersController.createUser);
  *               username:
  *                 type: string
  *               password:
+ *                 type: string
+ *               apiKey:
  *                 type: string
  *     responses:
  *       201:
@@ -108,10 +110,16 @@ router.post('/login', usersController.login);
  *     responses:
  *       200:
  *         description: Lista de usuarios
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/User'
  *       500:
  *         description: Error al obtener los usuarios
  */
-router.get('/',authenticateJWT, usersController.getAllUsers);
+router.get('/', authenticateJWT, usersController.getAllUsers);
 
 /**
  * @swagger
@@ -131,6 +139,12 @@ router.get('/',authenticateJWT, usersController.getAllUsers);
  *     responses:
  *       200:
  *         description: Lista de asistentes del usuario
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Assistant'
  *       404:
  *         description: Usuario no encontrado
  *       500:
