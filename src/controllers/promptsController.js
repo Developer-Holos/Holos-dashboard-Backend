@@ -32,7 +32,10 @@ exports.createPrompt = async (req, res) => {
     });
     const version = (lastPrompt?.version || 0) + 1;
 
-    const prompt = await Prompt.create({ assistantId, version, content, name });
+    // Desactivar cualquier otro prompt activo
+    await Prompt.update({ isActive: false }, { where: { assistantId, isActive: true } });
+
+    const prompt = await Prompt.create({ assistantId, version, content, name, isActive: true });
     res.status(201).json(prompt);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -48,11 +51,16 @@ exports.updatePrompt = async (req, res) => {
     if (!prompt) return res.status(404).json({ error: 'Prompt not found' });
 
     const newVersion = prompt.version + 1;
+
+    // Desactivar cualquier otro prompt activo
+    await Prompt.update({ isActive: false }, { where: { assistantId: prompt.assistantId, isActive: true } });
+
     const newPrompt = await Prompt.create({
       assistantId: prompt.assistantId,
       version: newVersion,
       content,
       name: prompt.name,
+      isActive: true,
     });
 
     res.status(201).json(newPrompt);
@@ -68,6 +76,17 @@ exports.deletePrompt = async (req, res) => {
     if (!prompt) return res.status(404).json({ error: 'Prompt not found' });
 
     await prompt.destroy();
+
+    // Buscar el prompt más reciente y activarlo
+    const latestPrompt = await Prompt.findOne({
+      where: { assistantId: prompt.assistantId },
+      order: [['version', 'DESC']],
+    });
+
+    if (latestPrompt) {
+      await latestPrompt.update({ isActive: true });
+    }
+
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -80,7 +99,7 @@ exports.usePreviousVersion = async (req, res) => {
     const prompt = await Prompt.findByPk(id);
     if (!prompt) return res.status(404).json({ error: 'Prompt not found' });
 
-    // Desactivar el prompt actual
+    // Desactivar cualquier otro prompt activo
     await Prompt.update({ isActive: false }, { where: { assistantId: prompt.assistantId, isActive: true } });
 
     // Activar la versión anterior
