@@ -1,6 +1,7 @@
 const { Assistant, User, Prompt } = require('../models'); // Importar el modelo Prompt
 const openaiService = require('../middleware/openai');  // Importar configuración de OpenAI
 const openai = require('openai'); // Importar el módulo openai
+const fs = require('fs'); // Importar el módulo fs
 
 // Obtener información de un asistente y compararla con la base de datos
 const getAssistantData = async (req, res) => {
@@ -202,9 +203,11 @@ const updateAssistantPrompt = async (req, res) => {
   }
 };
 
+
+
 const updateAssistantFile = async (req, res) => {
   const { assistantId } = req.params;
-  const { file } = req.body; // Archivo para subir (debe ser procesado como un `file` en el frontend)
+  const { filePaths } = req.body; // Lista de rutas de archivos para subir
   const userId = req.user.id; // Obtener el ID del usuario autenticado
   const user = await User.findByPk(userId);
 
@@ -212,41 +215,53 @@ const updateAssistantFile = async (req, res) => {
     return res.status(403).json({ message: 'API key no encontrada para el usuario.' });
   }
 
-  if (!file) {
-    return res.status(400).json({ message: 'El archivo es obligatorio para actualizar el asistente.' });
+  if (!filePaths || !Array.isArray(filePaths) || filePaths.length === 0) {
+    return res.status(400).json({ message: 'Las rutas de los archivos son obligatorias para actualizar el asistente.' });
   }
 
   try {
-    // Subir el archivo a OpenAI y obtener el ID
-    const fileResponse = await openai.files.create({
-      file, // Debes enviar el archivo como un Stream
-      purpose: 'assistants',
-    });
+    const vectorStoreIds = [];
 
-    const fileId = fileResponse.id;
+    for (const filePath of filePaths) {
+      // Leer el archivo como un Stream
+      const fileStream = fs.createReadStream(filePath);
+
+      // Subir el archivo a OpenAI y obtener el ID
+      const fileResponse = await openai.files.create({
+        file: fileStream, // Enviar el archivo como un Stream
+        purpose: 'assistants',
+      });
+
+      const fileId = fileResponse.id;
+
+      // Crear un vector store con el file_id
+      const vectorStoreResponse = await openai.vectorStores.create({
+        file_id: fileId,
+      });
+
+      const vectorStoreId = vectorStoreResponse.id;
+      vectorStoreIds.push(vectorStoreId);
+    }
 
     // Obtener el asistente actual
     const existingAssistant = await openaiService.getAssistantById(user.apiKey, assistantId);
 
-    // Actualizar solo el `file_search` con el nuevo archivo
+    // Actualizar el asistente con los nuevos vector_store_ids
     const updatedData = {
       ...existingAssistant,
-      tools: [
-        {
-          type: 'file_search',
-          file_search: {
-            file_ids: [fileId],
-          },
+      tool_resources: {
+        file_search: {
+          vector_store_ids: vectorStoreIds,
         },
-      ],
+      },
     };
 
     const response = await openaiService.updateAssistant(user.apiKey, assistantId, updatedData);
 
     res.status(200).json(response);
   } catch (error) {
-    console.error('Error al actualizar el archivo del asistente:', error);
-    res.status(500).json({ message: 'Error al actualizar el archivo del asistente.' });
+    console.error('Error al actualizar los archivos del asistente:', error);
+    res.status(500).json({ message: 'Error al actualizar los archivos del asistente.' });
   }
 };
 
