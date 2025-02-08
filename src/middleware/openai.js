@@ -1,4 +1,6 @@
 const axios = require("axios");
+const FormData = require('form-data');
+const fs = require('fs');
 
 const openaiService = {
     listAssistants: async (apiKey, limit = 20, order = "desc") => {
@@ -47,6 +49,25 @@ const openaiService = {
             if (error.response && error.response.data) {
                 console.error('Detalles del error:', error.response.data);
             }
+            throw error;
+        }
+    },
+
+    createFile: async (apiKey, filePath) => {
+        try {
+            const form = new FormData();
+            form.append('file', fs.createReadStream(filePath));
+            form.append('purpose', 'assistants');
+
+            const response = await axios.post('https://api.openai.com/v1/files', form, {
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    ...form.getHeaders(),
+                },
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error en createFile:', error.response ? error.response.data : error.message);
             throw error;
         }
     },
