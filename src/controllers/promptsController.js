@@ -1,5 +1,5 @@
 const { Prompt } = require('../models');
-const openaiService = require('../middleware/openai'); // Importar el servicio de OpenAI
+const openaiService = require('../middleware/openaiService'); // Importar el servicio de OpenAI
 
 exports.getPromptsByAssistant = async (req, res) => {
   const { assistantId } = req.params;

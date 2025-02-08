@@ -1,7 +1,8 @@
 const { Assistant, User, Prompt } = require('../models'); // Importar el modelo Prompt
-const openaiService = require('../middleware/openai');  // Importar configuración de OpenAI
+const openaiService = require('../middleware/openaiService');  // Importar configuración de OpenAI
 const openai = require('openai'); // Importar el módulo openai
 const fs = require('fs'); // Importar el módulo fs
+const getOpenAIApiInstance = require('../middleware/openai_config'); // Importar la configuración de OpenAI
 
 // Obtener información de un asistente y compararla con la base de datos
 const getAssistantData = async (req, res) => {
@@ -180,8 +181,11 @@ const updateAssistantPrompt = async (req, res) => {
     });
 
     if (lastPrompt) {
-      // Actualizar el contenido del último prompt activo sin crear una nueva versión
-      await lastPrompt.update({ content: instructions, name: promptName || lastPrompt.name });
+      // Verificar si las instrucciones son diferentes antes de actualizar
+      if (lastPrompt.content !== instructions) {
+        // Actualizar el contenido del último prompt activo sin crear una nueva versión
+        await lastPrompt.update({ content: instructions, name: promptName || lastPrompt.name });
+      }
 
       res.status(200).json({ assistant: response, prompt: lastPrompt });
     } else {
@@ -203,7 +207,6 @@ const updateAssistantPrompt = async (req, res) => {
   }
 };
 
-
 const updateAssistantFile = async (req, res) => {
   const { assistantId } = req.params;
   const files = req.files; // Archivos subidos
@@ -219,6 +222,7 @@ const updateAssistantFile = async (req, res) => {
   }
 
   try {
+    const openai = getOpenAIApiInstance(user.apiKey); // Obtener la instancia de OpenAI configurada
     const vectorStoreIds = [];
 
     for (const file of files) {
@@ -226,7 +230,7 @@ const updateAssistantFile = async (req, res) => {
       const fileStream = fs.createReadStream(file.path);
 
       // Subir el archivo a OpenAI y obtener el ID
-      const fileResponse = await openai.files.create({
+      const fileResponse = await openai.createFile({
         file: fileStream, // Enviar el archivo como un Stream
         purpose: 'assistants',
       });
@@ -234,7 +238,7 @@ const updateAssistantFile = async (req, res) => {
       const fileId = fileResponse.id;
 
       // Crear un vector store con el file_id
-      const vectorStoreResponse = await openai.vectorStores.create({
+      const vectorStoreResponse = await openai.createVectorStore({
         file_id: fileId,
       });
 
