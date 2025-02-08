@@ -218,7 +218,10 @@ const updateAssistantFile = async (req, res) => {
 
   try {
     // Subir el archivo a OpenAI y obtener el ID
-    const fileResponse = await openaiService.createFile(user.apiKey, file);
+    const fileResponse = await openai.files.create({
+      file, // Debes enviar el archivo como un Stream
+      purpose: 'assistants',
+    });
 
     const fileId = fileResponse.id;
 
@@ -244,7 +247,7 @@ const updateAssistantFile = async (req, res) => {
   } catch (error) {
     console.error('Error al actualizar el archivo del asistente:', error);
     res.status(500).json({ message: 'Error al actualizar el archivo del asistente.' });
-  } 
+  }
 };
 
 module.exports = {
