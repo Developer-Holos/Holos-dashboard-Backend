@@ -204,10 +204,9 @@ const updateAssistantPrompt = async (req, res) => {
 };
 
 
-
 const updateAssistantFile = async (req, res) => {
   const { assistantId } = req.params;
-  const { filePaths } = req.body; // Lista de rutas de archivos para subir
+  const files = req.files; // Archivos subidos
   const userId = req.user.id; // Obtener el ID del usuario autenticado
   const user = await User.findByPk(userId);
 
@@ -215,16 +214,16 @@ const updateAssistantFile = async (req, res) => {
     return res.status(403).json({ message: 'API key no encontrada para el usuario.' });
   }
 
-  if (!filePaths || !Array.isArray(filePaths) || filePaths.length === 0) {
-    return res.status(400).json({ message: 'Las rutas de los archivos son obligatorias para actualizar el asistente.' });
+  if (!files || files.length === 0) {
+    return res.status(400).json({ message: 'Los archivos son obligatorios para actualizar el asistente.' });
   }
 
   try {
     const vectorStoreIds = [];
 
-    for (const filePath of filePaths) {
+    for (const file of files) {
       // Leer el archivo como un Stream
-      const fileStream = fs.createReadStream(filePath);
+      const fileStream = fs.createReadStream(file.path);
 
       // Subir el archivo a OpenAI y obtener el ID
       const fileResponse = await openai.files.create({

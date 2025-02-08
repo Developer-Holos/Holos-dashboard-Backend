@@ -310,7 +310,7 @@ router.get('/', authenticateJWT, assistantController.getAllAssistants);
  */
 router.put('/:assistantId/prompt', authenticateJWT, assistantController.updateAssistantPrompt);
 
-/**
+/***
  * @swagger
  * /assistants/{assistantId}/file:
  *   put:
@@ -326,15 +326,16 @@ router.put('/:assistantId/prompt', authenticateJWT, assistantController.updateAs
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
- *               filePaths:
+ *               files:
  *                 type: array
  *                 items:
  *                   type: string
- *                 description: Lista de rutas de archivos para subir
+ *                   format: binary
+ *                 description: Lista de archivos para subir
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -354,7 +355,7 @@ router.put('/:assistantId/prompt', authenticateJWT, assistantController.updateAs
  *                 instructions:
  *                   type: string
  *       400:
- *         description: Las rutas de los archivos son obligatorias para actualizar el asistente
+ *         description: Los archivos son obligatorios para actualizar el asistente
  *         content:
  *           application/json:
  *             schema:
@@ -381,6 +382,6 @@ router.put('/:assistantId/prompt', authenticateJWT, assistantController.updateAs
  *                 message:
  *                   type: string
  */
-router.put('/:assistantId/file', authenticateJWT, assistantController.updateAssistantFile);
+router.put('/:assistantId/file', authenticateJWT, upload.array('files'), assistantController.updateAssistantFile);
 
 module.exports = router;
