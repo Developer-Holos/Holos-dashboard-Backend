@@ -1,5 +1,6 @@
 const { Assistant, User, Prompt } = require('../models'); // Importar el modelo Prompt
 const openaiService = require('../middleware/openai');  // Importar configuración de OpenAI
+const openai = require('openai'); // Importar el módulo openai
 
 // Obtener información de un asistente y compararla con la base de datos
 const getAssistantData = async (req, res) => {
