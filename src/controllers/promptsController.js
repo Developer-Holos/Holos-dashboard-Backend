@@ -1,4 +1,5 @@
 const { Prompt } = require('../models');
+const openaiService = require('../middleware/openai'); // Importar el servicio de OpenAI
 
 exports.getPromptsByAssistant = async (req, res) => {
   const { assistantId } = req.params;
@@ -35,7 +36,15 @@ exports.createPrompt = async (req, res) => {
     // Desactivar cualquier otro prompt activo
     await Prompt.update({ isActive: false }, { where: { assistantId, isActive: true } });
 
-    const prompt = await Prompt.create({ assistantId, version, content, name, isActive: true });
+    const prompt = await Prompt.create({ assistantId, version, content, name, isActive: false });
+
+    // Enviar las instrucciones a OpenAI
+    const user = req.user; // Obtener el usuario autenticado
+    await openaiService.updateAssistant(user.apiKey, assistantId, { instructions: content });
+
+    // Activar el nuevo prompt
+    await prompt.update({ isActive: true });
+
     res.status(201).json(prompt);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -60,8 +69,15 @@ exports.updatePrompt = async (req, res) => {
       version: newVersion,
       content,
       name: prompt.name,
-      isActive: true,
+      isActive: false,
     });
+
+    // Enviar las instrucciones a OpenAI
+    const user = req.user; // Obtener el usuario autenticado
+    await openaiService.updateAssistant(user.apiKey, prompt.assistantId, { instructions: content });
+
+    // Activar el nuevo prompt
+    await newPrompt.update({ isActive: true });
 
     res.status(201).json(newPrompt);
   } catch (error) {
@@ -84,6 +100,11 @@ exports.deletePrompt = async (req, res) => {
     });
 
     if (latestPrompt) {
+      // Enviar las instrucciones a OpenAI
+      const user = req.user; // Obtener el usuario autenticado
+      await openaiService.updateAssistant(user.apiKey, prompt.assistantId, { instructions: latestPrompt.content });
+
+      // Activar el prompt más reciente
       await latestPrompt.update({ isActive: true });
     }
 
@@ -101,6 +122,10 @@ exports.usePreviousVersion = async (req, res) => {
 
     // Desactivar cualquier otro prompt activo
     await Prompt.update({ isActive: false }, { where: { assistantId: prompt.assistantId, isActive: true } });
+
+    // Enviar las instrucciones a OpenAI
+    const user = req.user; // Obtener el usuario autenticado
+    await openaiService.updateAssistant(user.apiKey, prompt.assistantId, { instructions: prompt.content });
 
     // Activar la versión anterior
     await prompt.update({ isActive: true });
