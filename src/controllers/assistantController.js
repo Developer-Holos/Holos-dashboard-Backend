@@ -226,6 +226,8 @@ const updateAssistantFile = async (req, res) => {
     const vectorStoreIds = [];
 
     for (const file of files) {
+      console.log(`Procesando archivo: ${file.originalname}`);
+
       // Leer el archivo como un Stream
       const fileStream = fs.createReadStream(file.path);
 
@@ -235,6 +237,8 @@ const updateAssistantFile = async (req, res) => {
         purpose: 'assistants',
       });
 
+      console.log(`Archivo subido, ID: ${fileResponse.id}`);
+
       const fileId = fileResponse.id;
 
       // Crear un vector store con el file_id
@@ -242,12 +246,15 @@ const updateAssistantFile = async (req, res) => {
         file_ids: [fileId],
       });
 
+      console.log(`Vector store creado, ID: ${vectorStoreResponse.id}`);
+
       const vectorStoreId = vectorStoreResponse.id;
       vectorStoreIds.push(vectorStoreId);
     }
 
     // Obtener el asistente actual
     const existingAssistant = await openaiService.getAssistantById(user.apiKey, assistantId);
+    console.log(`Asistente obtenido: ${existingAssistant.id}`);
 
     // Actualizar el asistente con los nuevos vector_store_ids
     const updatedData = {
@@ -260,6 +267,7 @@ const updateAssistantFile = async (req, res) => {
     };
 
     const response = await openaiService.updateAssistant(user.apiKey, assistantId, updatedData);
+    console.log(`Asistente actualizado: ${response.id}`);
 
     res.status(200).json(response);
   } catch (error) {
@@ -267,7 +275,6 @@ const updateAssistantFile = async (req, res) => {
     res.status(500).json({ message: 'Error al actualizar los archivos del asistente.' });
   }
 };
-
 module.exports = {
   getAssistantData,
   updateAssistantData,
