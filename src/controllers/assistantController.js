@@ -233,14 +233,13 @@ const updateAssistantFile = async (req, res) => {
       const fileExtension = file.originalname.split('.').pop().toLowerCase();
       const mimeType = file.mimetype || 'application/json'; // Asegurarse de que el tipo MIME es correcto
 
+      console.log(`Extensión del archivo: ${fileExtension}`);
       console.log(`Tipo de archivo: ${mimeType}`);
 
       // Subir el archivo a OpenAI y obtener el ID
       const fileResponse = await openai.files.create({
         file: fileStream, // Enviar el archivo como un Stream
         purpose: 'assistants',
-        file_extension: fileExtension, // Especificar la extensión del archivo
-        mime_type: mimeType, // Especificar el tipo MIME del archivo
       });
 
       console.log(`Archivo subido, ID: ${fileResponse.id}`);
