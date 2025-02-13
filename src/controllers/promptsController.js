@@ -31,6 +31,12 @@ exports.createPrompt = async (req, res) => {
       where: { assistantId },
       order: [['version', 'DESC']],
     });
+
+    // Verificar si las instrucciones son diferentes antes de crear un nuevo prompt
+    if (lastPrompt && lastPrompt.content === content) {
+      return res.status(400).json({ error: 'Las instrucciones son iguales a las del último prompt.' });
+    }
+
     const version = (lastPrompt?.version || 0) + 1;
 
     // Desactivar cualquier otro prompt activo
@@ -58,6 +64,11 @@ exports.updatePrompt = async (req, res) => {
   try {
     const prompt = await Prompt.findByPk(id);
     if (!prompt) return res.status(404).json({ error: 'Prompt not found' });
+
+    // Verificar si las instrucciones son diferentes antes de crear un nuevo prompt
+    if (prompt.content === content) {
+      return res.status(400).json({ error: 'Las instrucciones son iguales a las del prompt actual.' });
+    }
 
     const newVersion = prompt.version + 1;
 
