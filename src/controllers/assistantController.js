@@ -243,6 +243,8 @@ const updateAssistantFile = async (req, res) => {
       });
 
       console.log(`Archivo subido, ID: ${fileResponse.id}`);
+      console.log(`Archivo subido, nombre: ${fileResponse.filename}`);
+      console.log(`Archivo subido, extensión: ${fileResponse.filename.split('.').pop().toLowerCase()}`);
 
       const fileId = fileResponse.id;
 
