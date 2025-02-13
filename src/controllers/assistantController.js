@@ -268,7 +268,6 @@ const updateAssistantFile = async (req, res) => {
 
     // Actualizar el asistente con los nuevos vector_store_ids
     const updatedData = {
-      ...existingAssistant,
       tool_resources: {
         file_search: {
           vector_store_ids: vectorStoreIds,
