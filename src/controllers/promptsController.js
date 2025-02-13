@@ -46,6 +46,9 @@ exports.createPrompt = async (req, res) => {
 
     // Enviar las instrucciones a OpenAI
     const user = req.user; // Obtener el usuario autenticado
+    if (!user || !user.apiKey) {
+      return res.status(403).json({ message: 'API key no encontrada para el usuario.' });
+    }
     await openaiService.updateAssistant(user.apiKey, assistantId, { instructions: content });
 
     // Activar el nuevo prompt
@@ -85,6 +88,9 @@ exports.updatePrompt = async (req, res) => {
 
     // Enviar las instrucciones a OpenAI
     const user = req.user; // Obtener el usuario autenticado
+    if (!user || !user.apiKey) {
+      return res.status(403).json({ message: 'API key no encontrada para el usuario.' });
+    }
     await openaiService.updateAssistant(user.apiKey, prompt.assistantId, { instructions: content });
 
     // Activar el nuevo prompt
@@ -113,6 +119,9 @@ exports.deletePrompt = async (req, res) => {
     if (latestPrompt) {
       // Enviar las instrucciones a OpenAI
       const user = req.user; // Obtener el usuario autenticado
+      if (!user || !user.apiKey) {
+        return res.status(403).json({ message: 'API key no encontrada para el usuario.' });
+      }
       await openaiService.updateAssistant(user.apiKey, prompt.assistantId, { instructions: latestPrompt.content });
 
       // Activar el prompt más reciente
@@ -136,6 +145,9 @@ exports.usePreviousVersion = async (req, res) => {
 
     // Enviar las instrucciones a OpenAI
     const user = req.user; // Obtener el usuario autenticado
+    if (!user || !user.apiKey) {
+      return res.status(403).json({ message: 'API key no encontrada para el usuario.' });
+    }
     await openaiService.updateAssistant(user.apiKey, prompt.assistantId, { instructions: prompt.content });
 
     // Activar la versión anterior
