@@ -37,15 +37,19 @@ const getAssistantData = async (req, res) => {
           where: { assistantId: response.id },
           order: [['version', 'DESC']],
         });
-        const version = (lastPrompt?.version || 0) + 1;
 
-        await Prompt.create({
-          assistantId: response.id,
-          content: response.instructions,
-          name: `${response.name} Prompt v${version}`,
-          version,
-          isActive: true,
-        });
+        // Verificar si las instrucciones son diferentes antes de crear un nuevo prompt
+        if (!lastPrompt || lastPrompt.content !== response.instructions) {
+          const version = (lastPrompt?.version || 0) + 1;
+
+          await Prompt.create({
+            assistantId: response.id,
+            content: response.instructions,
+            name: `${response.name} Prompt v${version}`,
+            version,
+            isActive: true,
+          });
+        }
       }
     }
 
@@ -118,7 +122,7 @@ const getAllAssistants = async (req, res) => {
 
     // Guardar los asistentes en la base de datos
     for (const assistantData of response.data) {
-      const [assistant, created] = await Assistant.upsert({
+      await Assistant.upsert({
         id: assistantData.id,
         name: assistantData.name,
         model: assistantData.model,
@@ -132,15 +136,19 @@ const getAllAssistants = async (req, res) => {
           where: { assistantId: assistantData.id },
           order: [['version', 'DESC']],
         });
-        const version = (lastPrompt?.version || 0) + 1;
 
-        await Prompt.create({
-          assistantId: assistantData.id,
-          content: assistantData.instructions,
-          name: `${assistantData.name} Prompt v${version}`,
-          version,
-          isActive: true,
-        });
+        // Verificar si las instrucciones son diferentes antes de crear un nuevo prompt
+        if (!lastPrompt || lastPrompt.content !== assistantData.instructions) {
+          const version = (lastPrompt?.version || 0) + 1;
+
+          await Prompt.create({
+            assistantId: assistantData.id,
+            content: assistantData.instructions,
+            name: `${assistantData.name} Prompt v${version}`,
+            version,
+            isActive: true,
+          });
+        }
       }
     }
 
