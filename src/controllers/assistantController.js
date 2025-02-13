@@ -207,6 +207,9 @@ const updateAssistantPrompt = async (req, res) => {
   }
 };
 
+const axios = require('axios');
+const FormData = require('form-data');
+
 const updateAssistantFile = async (req, res) => {
   const { assistantId } = req.params;
   const files = req.files; // Archivos subidos
@@ -228,23 +231,20 @@ const updateAssistantFile = async (req, res) => {
     for (const file of files) {
       console.log(`Procesando archivo: ${file.originalname}`);
 
-      // Leer el archivo como un Stream
-      const fileStream = fs.readFileSync(file.path);
-      const fileExtension = file.originalname.split('.').pop().toLowerCase();
-      const mimeType = file.mimetype || 'application/json'; // Asegurarse de que el tipo MIME es correcto
-
-      console.log(`Extensión del archivo: ${fileExtension}`);
-      console.log(`Tipo de archivo: ${mimeType}`);
+      // Crear un FormData para el archivo
+      const form = new FormData();
+      form.append('file', fs.createReadStream(file.path), file.originalname);
+      form.append('purpose', 'assistants');
 
       // Subir el archivo a OpenAI y obtener el ID
-      const fileResponse = await openai.files.create({
-        file: {
-          name: file.originalname,
-          data: fileStream
+      const response = await axios.post('https://api.openai.com/v1/files', form, {
+        headers: {
+          ...form.getHeaders(),
+          'Authorization': `Bearer ${user.apiKey}`,
         },
-        purpose: 'assistants',
       });
 
+      const fileResponse = response.data;
       console.log(`Archivo subido, ID: ${fileResponse.id}`);
       console.log(`Archivo subido, nombre: ${fileResponse.filename}`);
       console.log(`Archivo subido, extensión: ${fileResponse.filename.split('.').pop().toLowerCase()}`);
