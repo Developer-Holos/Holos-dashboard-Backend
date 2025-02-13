@@ -254,8 +254,9 @@ const updateAssistantFile = async (req, res) => {
       // Crear un vector store con el file_id
       const vectorStoreResponse = await openai.beta.vectorStores.create({
         file_ids: [fileId],
+        name: `vector_${new Date().toLocaleDateString('es-ES').replace(/\//g, '-')}`, // Nombre del vector store con la fecha en formato dia-mes-año
       });
-
+      
       console.log(`Vector store creado, ID: ${vectorStoreResponse.id}`);
 
       const vectorStoreId = vectorStoreResponse.id;
