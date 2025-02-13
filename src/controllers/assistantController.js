@@ -230,7 +230,7 @@ const updateAssistantFile = async (req, res) => {
       const fileStream = fs.createReadStream(file.path);
 
       // Subir el archivo a OpenAI y obtener el ID
-      const fileResponse = await openai.createFile({
+      const fileResponse = await openai.files.create({
         file: fileStream, // Enviar el archivo como un Stream
         purpose: 'assistants',
       });
@@ -238,8 +238,8 @@ const updateAssistantFile = async (req, res) => {
       const fileId = fileResponse.id;
 
       // Crear un vector store con el file_id
-      const vectorStoreResponse = await openai.createVectorStore({
-        file_id: fileId,
+      const vectorStoreResponse = await openai.beta.vectorStores.create({
+        file_ids: [fileId],
       });
 
       const vectorStoreId = vectorStoreResponse.id;
