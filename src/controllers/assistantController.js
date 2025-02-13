@@ -229,23 +229,19 @@ const updateAssistantFile = async (req, res) => {
       console.log(`Procesando archivo: ${file.originalname}`);
 
       // Leer el archivo como un Stream
-      const fileStream = fs.createReadStream(file.path);
+      const fileStream = fs.readFileSync(file.path);
       const fileExtension = file.originalname.split('.').pop().toLowerCase();
       const mimeType = file.mimetype || 'application/json'; // Asegurarse de que el tipo MIME es correcto
 
       console.log(`Extensión del archivo: ${fileExtension}`);
       console.log(`Tipo de archivo: ${mimeType}`);
 
-      // Renombrar el archivo para asegurar que conserva la extensión
-      const renamedFilePath = `${file.path}.${fileExtension}`;
-      fs.renameSync(file.path, renamedFilePath);
-
-      // Leer el archivo renombrado como un Stream
-      const renamedFileStream = fs.createReadStream(renamedFilePath);
-
       // Subir el archivo a OpenAI y obtener el ID
       const fileResponse = await openai.files.create({
-        file: renamedFileStream, // Enviar el archivo como un Stream
+        file: {
+          name: file.originalname,
+          data: fileStream
+        },
         purpose: 'assistants',
       });
 
