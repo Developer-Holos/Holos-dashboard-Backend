@@ -5,7 +5,7 @@ const app = express();
 
 // Configurar CORS con opciones adicionales
 const corsOptions = {
-  origin: ['http://localhost:4200', 'https://assistant-dashboard-production.up.railway.app'], // Permitir solicitudes desde estos orígenes
+  origin: ['http://localhost:4200', 'https://web-production-3c172.up.railway.app'], // Permitir solicitudes desde estos orígenes
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Métodos permitidos
   allowedHeaders: 'Origin, X-Requested-With, Content-Type, Accept, Authorization', // Encabezados permitidos
   credentials: true, // Permitir el envío de cookies y encabezados de autorización
