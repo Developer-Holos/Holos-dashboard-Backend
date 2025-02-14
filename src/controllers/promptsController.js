@@ -72,23 +72,10 @@ exports.updatePrompt = async (req, res) => {
     const prompt = await Prompt.findByPk(id);
     if (!prompt) return res.status(404).json({ error: 'Prompt not found' });
 
-    // Verificar si las instrucciones son diferentes antes de crear un nuevo prompt
+    // Verificar si las instrucciones son diferentes antes de actualizar el prompt
     if (prompt.content === content) {
       return res.status(400).json({ error: 'Las instrucciones son iguales a las del prompt actual.' });
     }
-
-    const newVersion = prompt.version + 1;
-
-    // Desactivar cualquier otro prompt activo
-    await Prompt.update({ isActive: false }, { where: { assistantId: prompt.assistantId, isActive: true } });
-
-    const newPrompt = await Prompt.create({
-      assistantId: prompt.assistantId,
-      version: newVersion,
-      content,
-      name: prompt.name,
-      isActive: false,
-    });
 
     // Obtener el usuario autenticado
     const userId = req.user.id;
@@ -101,10 +88,10 @@ exports.updatePrompt = async (req, res) => {
     // Enviar las instrucciones a OpenAI
     await openaiService.updateAssistant(user.apiKey, prompt.assistantId, { instructions: content });
 
-    // Activar el nuevo prompt
-    await newPrompt.update({ isActive: true });
+    // Actualizar el prompt existente
+    await prompt.update({ content });
 
-    res.status(201).json(newPrompt);
+    res.status(200).json(prompt);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
