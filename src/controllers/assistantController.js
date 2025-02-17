@@ -9,20 +9,25 @@ const getAssistantData = async (req, res) => {
   try {
     const { assistantId } = req.params;  // Suponiendo que el ID de asistente viene por parámetro
     const userId = req.user.id; // Obtener el ID del usuario autenticado
+    console.log(`Obteniendo usuario con id: ${userId}`);
     const user = await User.findByPk(userId);
 
     if (!user || !user.apiKey) {
+      console.log('API key no encontrada para el usuario');
       return res.status(403).json({ message: 'API key no encontrada para el usuario.' });
     }
 
+    console.log(`Realizando llamada a OpenAI para obtener datos del asistente con id: ${assistantId}`);
     // Realizar la llamada a OpenAI para obtener los datos del asistente
     const response = await openaiService.getAssistantById(user.apiKey, assistantId);
 
+    console.log(`Obteniendo asistente de la base de datos con id: ${assistantId}`);
     // Obtener el asistente de la base de datos
     const assistant = await Assistant.findByPk(assistantId);
 
     // Comparar y actualizar si hay cambios
     if (!assistant || assistant.name !== response.name || assistant.model !== response.model || assistant.instructions !== response.instructions) {
+      console.log('Actualizando asistente en la base de datos');
       await Assistant.upsert({
         id: response.id,
         name: response.name,
@@ -33,6 +38,7 @@ const getAssistantData = async (req, res) => {
 
       // Guardar los prompts asociados al asistente
       if (response.instructions) {
+        console.log('Obteniendo el último prompt del asistente');
         const lastPrompt = await Prompt.findOne({
           where: { assistantId: response.id },
           order: [['version', 'DESC']],
@@ -40,6 +46,7 @@ const getAssistantData = async (req, res) => {
 
         // Verificar si las instrucciones son diferentes antes de crear un nuevo prompt
         if (!lastPrompt || lastPrompt.content !== response.instructions) {
+          console.log('Las instrucciones son diferentes, creando un nuevo prompt');
           const version = (lastPrompt?.version || 0) + 1;
 
           // Desactivar el último prompt activo
@@ -54,10 +61,15 @@ const getAssistantData = async (req, res) => {
             version,
             isActive: true,
           });
+        } else {
+          console.log('Las instrucciones son iguales, activando el último prompt');
+          // Si las instrucciones son las mismas, solo activar el último prompt
+          await lastPrompt.update({ isActive: true });
         }
       }
     }
 
+    console.log('Datos del asistente obtenidos y actualizados correctamente');
     res.status(200).json(response);
   } catch (error) {
     console.error('Error obteniendo los datos del asistente:', error);

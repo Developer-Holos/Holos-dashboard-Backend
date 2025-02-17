@@ -136,31 +136,41 @@ exports.deletePrompt = async (req, res) => {
 exports.usePreviousVersion = async (req, res) => {
   const { id } = req.params;
   try {
+    console.log(`Buscando prompt con id: ${id}`);
     const prompt = await Prompt.findByPk(id);
-    if (!prompt) return res.status(404).json({ error: 'Prompt not found' });
+    if (!prompt) {
+      console.log('Prompt no encontrado');
+      return res.status(404).json({ error: 'Prompt not found' });
+    }
 
-    // Desactivar cualquier otro prompt activo
+    console.log(`Desactivando cualquier otro prompt activo para assistantId: ${prompt.assistantId}`);
     await Prompt.update({ isActive: false }, { where: { assistantId: prompt.assistantId, isActive: true } });
 
-    // Obtener el usuario autenticado
+    console.log('Obteniendo el usuario autenticado');
     const userId = req.user.id;
     const user = await User.findByPk(userId);
 
     if (!user || !user.apiKey) {
+      console.log('API key no encontrada para el usuario');
       return res.status(403).json({ message: 'API key no encontrada para el usuario.' });
     }
 
-    // Enviar las instrucciones a OpenAI solo si las instrucciones son diferentes
+    console.log('Verificando si las instrucciones son diferentes');
     const currentActivePrompt = await Prompt.findOne({ where: { assistantId: prompt.assistantId, isActive: true } });
     if (!currentActivePrompt || currentActivePrompt.content !== prompt.content) {
+      console.log('Las instrucciones son diferentes, actualizando en OpenAI');
       await openaiService.updateAssistant(user.apiKey, prompt.assistantId, { instructions: prompt.content });
+    } else {
+      console.log('Las instrucciones son iguales, no se necesita actualizar en OpenAI');
     }
 
-    // Activar el prompt seleccionado
+    console.log('Activando el prompt seleccionado');
     await prompt.update({ isActive: true });
 
+    console.log('Prompt activado exitosamente');
     res.status(200).json(prompt);
   } catch (error) {
+    console.error('Error en usePreviousVersion:', error);
     res.status(500).json({ error: error.message });
   }
 };
