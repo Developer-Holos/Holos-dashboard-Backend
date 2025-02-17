@@ -3,6 +3,60 @@ const router = express.Router();
 const usersController = require('../controllers/usersController');
 const authenticateJWT = require('../middleware/auth');
 
+
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Assistant:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *           description: ID del asistente
+ *         name:
+ *           type: string
+ *           description: Nombre del asistente
+ *         description:
+ *           type: string
+ *           description: Descripción del asistente
+ *         userId:
+ *           type: integer
+ *           description: ID del usuario
+ *         version:
+ *           type: integer
+ *           description: Versión del asistente
+ *     User:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *           description: ID del usuario
+ *         name:
+ *           type: string
+ *           description: Nombre del usuario
+ *         username:
+ *           type: string
+ *           description: Nombre de usuario
+ *         password:
+ *           type: string
+ *           description: Contraseña del usuario
+ *         isAdmin:
+ *           type: boolean
+ *           description: Indica si el usuario es administrador
+ *         apiKey:
+ *           type: string
+ *           description: API key del usuario
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ * security:
+ *   - bearerAuth: []
+ */
+
 /**
  * @swagger
  * tags:
