@@ -38,18 +38,20 @@ const getAssistantData = async (req, res) => {
 
       // Guardar los prompts asociados al asistente
       if (response.instructions) {
-        console.log('Obteniendo el último prompt del asistente');
-        const lastPrompt = await Prompt.findOne({
+        console.log('Obteniendo todos los prompts del asistente');
+        const allPrompts = await Prompt.findAll({
           where: { assistantId: response.id },
-          order: [['version', 'DESC']],
         });
 
-        // Verificar si las instrucciones son diferentes antes de crear un nuevo prompt
-        if (!lastPrompt || lastPrompt.content !== response.instructions) {
+        // Verificar si existe algún prompt con las mismas instrucciones
+        const existingPrompt = allPrompts.find(prompt => prompt.content === response.instructions);
+
+        if (!existingPrompt) {
           console.log('Las instrucciones son diferentes, creando un nuevo prompt');
-          const version = (lastPrompt?.version || 0) + 1;
+          const version = (allPrompts.length > 0 ? Math.max(...allPrompts.map(prompt => prompt.version)) : 0) + 1;
 
           // Desactivar el último prompt activo
+          const lastPrompt = allPrompts.find(prompt => prompt.isActive);
           if (lastPrompt) {
             await lastPrompt.update({ isActive: false });
           }
@@ -62,11 +64,13 @@ const getAssistantData = async (req, res) => {
             isActive: true,
           });
         } else {
-          console.log('Las instrucciones son iguales, activando el último prompt');
-          // Si las instrucciones son las mismas, solo activar el último prompt
-          await lastPrompt.update({ isActive: true });
+          console.log('Las instrucciones son iguales, activando el prompt existente');
+          // Si las instrucciones son las mismas, solo activar el prompt existente
+          await existingPrompt.update({ isActive: true });
         }
       }
+    } else {
+      console.log('No hay cambios en el asistente, no se necesita actualizar');
     }
 
     console.log('Datos del asistente obtenidos y actualizados correctamente');
