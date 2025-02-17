@@ -150,10 +150,13 @@ exports.usePreviousVersion = async (req, res) => {
       return res.status(403).json({ message: 'API key no encontrada para el usuario.' });
     }
 
-    // Enviar las instrucciones a OpenAI
-    await openaiService.updateAssistant(user.apiKey, prompt.assistantId, { instructions: prompt.content });
+    // Enviar las instrucciones a OpenAI solo si las instrucciones son diferentes
+    const currentActivePrompt = await Prompt.findOne({ where: { assistantId: prompt.assistantId, isActive: true } });
+    if (!currentActivePrompt || currentActivePrompt.content !== prompt.content) {
+      await openaiService.updateAssistant(user.apiKey, prompt.assistantId, { instructions: prompt.content });
+    }
 
-    // Activar la versión anterior
+    // Activar el prompt seleccionado
     await prompt.update({ isActive: true });
 
     res.status(200).json(prompt);
