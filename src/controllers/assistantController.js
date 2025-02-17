@@ -42,6 +42,11 @@ const getAssistantData = async (req, res) => {
         if (!lastPrompt || lastPrompt.content !== response.instructions) {
           const version = (lastPrompt?.version || 0) + 1;
 
+          // Desactivar el último prompt activo
+          if (lastPrompt) {
+            await lastPrompt.update({ isActive: false });
+          }
+
           await Prompt.create({
             assistantId: response.id,
             content: response.instructions,
@@ -140,6 +145,11 @@ const getAllAssistants = async (req, res) => {
         // Verificar si las instrucciones son diferentes antes de crear un nuevo prompt
         if (!lastPrompt || lastPrompt.content !== assistantData.instructions) {
           const version = (lastPrompt?.version || 0) + 1;
+
+          // Desactivar el último prompt activo
+          if (lastPrompt) {
+            await lastPrompt.update({ isActive: false });
+          }
 
           await Prompt.create({
             assistantId: assistantData.id,
