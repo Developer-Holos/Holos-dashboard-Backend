@@ -356,7 +356,6 @@ const updateAssistantPrompt = async (req, res) => {
   }
 };
 
-const axios = require('axios');
 const FormData = require('form-data');
 
 // Actualizar los archivos de un asistente (si el vector no existe)
@@ -434,6 +433,169 @@ const getFileDetails = async (req, res) => {
   }
 };
 
+const path = require('path');
+const XLSX = require('xlsx');
+const axios = require('axios');
+
+const updateAssistantFileWithDrive = async (req, res) => {
+  const { assistantId } = req.params;
+  const { driveFolderLink } = req.body; // Enlace público de la carpeta de Google Drive
+  const userId = req.user.id;
+  const user = await User.findByPk(userId);
+
+  const supportedExtensions = [
+    'c', 'cpp', 'cs', 'css', 'doc', 'docx', 'go', 'html', 'java', 'js', 'json', 'md', 'pdf', 'php', 'pptx', 'py', 'rb', 'sh', 'tex', 'ts', 'txt'
+  ];
+
+  const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+
+  if (!user || !user.apiKey) {
+    return res.status(403).json({ message: 'API key no encontrada para el usuario.' });
+  }
+
+  if (!driveFolderLink) {
+    return res.status(400).json({ message: 'Se requiere un enlace público de una carpeta de Google Drive.' });
+  }
+
+  try {
+    const openai = getOpenAIApiInstance(user.apiKey);
+
+    // Obtener el asistente actual
+    const assistant = await Assistant.findByPk(assistantId);
+
+    if (!assistant) {
+      return res.status(404).json({ message: 'Asistente no encontrado.' });
+    }
+
+    // Si el asistente ya tiene un vectorStoreId, eliminar los archivos y el vector antiguo
+    if (assistant.vectorStoreId) {
+      console.log(`Eliminando archivos del vector store con ID: ${assistant.vectorStoreId}`);
+      const filesResponse = await openai.vectorStores.files.list(assistant.vectorStoreId);
+
+      if (filesResponse.data && filesResponse.data.length > 0) {
+        for (const file of filesResponse.data) {
+          console.log(`Eliminando archivo con ID: ${file.id}`);
+          await openai.vectorStores.files.del(assistant.vectorStoreId, file.id);
+        }
+      }
+
+      console.log(`Eliminando vector store antiguo con ID: ${assistant.vectorStoreId}`);
+      await openai.vectorStores.del(assistant.vectorStoreId);
+    }
+
+    // Extraer el ID de la carpeta desde el enlace público
+    const folderId = extractFolderIdFromLink(driveFolderLink);
+    if (!folderId) {
+      return res.status(400).json({ message: 'No se pudo extraer el ID de la carpeta del enlace proporcionado.' });
+    }
+
+    // Listar los archivos en la carpeta pública
+    const driveFiles = await listFilesInDriveFolder(folderId, GOOGLE_API_KEY);
+
+    let vectorStoreId = null;
+
+    for (const file of driveFiles) {
+      console.log(`Descargando archivo desde Google Drive: ${file.name}`);
+
+      // Descargar el archivo desde Google Drive
+      const tempFilePath = await downloadFileFromDrive(file.id, file.name, GOOGLE_API_KEY);
+
+      console.log(`Archivo descargado: ${tempFilePath}`);
+
+      // Verificar la extensión del archivo
+      const fileExtension = path.extname(tempFilePath).slice(1).toLowerCase();
+
+      if (!supportedExtensions.includes(fileExtension)) {
+        console.log(`La extensión .${fileExtension} no está permitida. Transformando a JSON...`);
+
+        if (['xls', 'xlsx', 'xlsm'].includes(fileExtension)) {
+          // Procesar archivo Excel y convertirlo a JSON
+          const workbook = XLSX.readFile(tempFilePath);
+          const jsonContent = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+          const jsonFilePath = `${tempFilePath}.json`;
+
+          fs.writeFileSync(jsonFilePath, JSON.stringify(jsonContent));
+          tempFilePath = jsonFilePath; // Actualizar la ruta del archivo para subir el JSON
+        } else {
+          // Transformar otros archivos no permitidos a JSON con contenido base64
+          const fileContent = fs.readFileSync(tempFilePath);
+          const base64Content = fileContent.toString('base64');
+          const jsonContent = JSON.stringify({ content: base64Content });
+          const jsonFilePath = `${tempFilePath}.json`;
+
+          fs.writeFileSync(jsonFilePath, jsonContent);
+          tempFilePath = jsonFilePath; // Actualizar la ruta del archivo para subir el JSON
+        }
+      }
+
+      // Subir el archivo (ya sea original o transformado) a OpenAI
+      const form = new FormData();
+      form.append('file', fs.createReadStream(tempFilePath), path.basename(tempFilePath));
+      form.append('purpose', 'assistants');
+
+      const uploadResponse = await axios.post('https://api.openai.com/v1/files', form, {
+        headers: {
+          ...form.getHeaders(),
+          'Authorization': `Bearer ${user.apiKey}`,
+        },
+      });
+
+      const fileId = uploadResponse.data.id;
+
+      const vectorStoreResponse = await openai.beta.vectorStores.create({
+        file_ids: [fileId],
+        name: `vector_${new Date().toLocaleDateString('es-ES').replace(/\//g, '-')}`,
+      });
+
+      vectorStoreId = vectorStoreResponse.id;
+
+      // Eliminar archivos temporales transformados
+      if (tempFilePath.endsWith('.json')) {
+        fs.unlinkSync(tempFilePath);
+      }
+    }
+
+    // Actualizar el vectorStoreId en la base de datos
+    await Assistant.update(
+      { vectorStoreId },
+      { where: { id: assistantId } }
+    );
+
+    res.status(200).json({ message: 'Archivos actualizados, vector antiguo eliminado y nuevo vector creado.', vectorStoreId });
+  } catch (error) {
+    console.error('Error al actualizar los archivos del asistente desde Google Drive:', error);
+    res.status(500).json({ message: 'Error al actualizar los archivos del asistente desde Google Drive.' });
+  }
+};
+
+// Función para extraer el ID de la carpeta desde el enlace público
+const extractFolderIdFromLink = (link) => {
+  const match = link.match(/[-\w]{25,}/);
+  return match ? match[0] : null;
+};
+
+// Función para listar los archivos en una carpeta pública de Google Drive
+const listFilesInDriveFolder = async (folderId, apiKey) => {
+  const url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents&key=${apiKey}&fields=files(id,name)`;
+  const response = await axios.get(url);
+  return response.data.files;
+};
+
+// Función para descargar un archivo desde Google Drive
+const downloadFileFromDrive = async (fileId, fileName, apiKey) => {
+  const url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${apiKey}`;
+  const tempFilePath = path.join(__dirname, 'temp', fileName);
+  const writer = fs.createWriteStream(tempFilePath);
+
+  const response = await axios.get(url, { responseType: 'stream' });
+  response.data.pipe(writer);
+
+  return new Promise((resolve, reject) => {
+    writer.on('finish', () => resolve(tempFilePath));
+    writer.on('error', reject);
+  });
+};
+
 const downloadFileContent = async (req, res) => {
   const { fileId } = req.params; // Obtener el ID del archivo desde los parámetros de la ruta
   const userId = req.user.id; // Obtener el ID del usuario autenticado
@@ -469,5 +631,6 @@ module.exports = {
   updateAssistantPrompt,
   updateAssistantFile,
   getFileDetails,
+  updateAssistantFileWithDrive,
   downloadFileContent,
 };
