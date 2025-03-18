@@ -74,7 +74,6 @@ const getAssistantData = async (req, res) => {
   }
 };
 
-// Obtener los archivos de un vector
 const getVectorFiles = async (req, res) => {
   const { vectorStoreId } = req.params;
   const userId = req.user.id; // Obtener el ID del usuario autenticado
@@ -89,8 +88,9 @@ const getVectorFiles = async (req, res) => {
     console.log(`Obteniendo archivos del vector store con ID: ${vectorStoreId}`);
 
     // Validar si vectorStores está definido
-    if (!openai.vectorStores || typeof openai.vectorStores.files?.list !== 'function') {
-      throw new Error('La API de OpenAI no tiene la propiedad vectorStores.files.list');
+    if (!openai.vectorStores || !openai.vectorStores.files || typeof openai.vectorStores.files.list !== 'function') {
+      console.error('La API de OpenAI no tiene la funcionalidad vectorStores.files.list');
+      return res.status(500).json({ message: 'La funcionalidad vectorStores.files.list no está disponible en la API de OpenAI.' });
     }
 
     const response = await openai.vectorStores.files.list(vectorStoreId);
