@@ -614,6 +614,73 @@ router.get('/file/:fileId', authenticateJWT, assistantController.getFileDetails)
 
 /**
  * @swagger
+ * /assistants/{assistantId}/drive:
+ *   put:
+ *     summary: Actualizar los archivos de un asistente desde una carpeta pública de Google Drive
+ *     tags: [Assistants]
+ *     parameters:
+ *       - in: path
+ *         name: assistantId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID del asistente
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               driveFolderLink:
+ *                 type: string
+ *                 description: Enlace público de la carpeta de Google Drive
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Archivos del asistente actualizados desde Google Drive
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 vectorStoreId:
+ *                   type: string
+ *       400:
+ *         description: Error en la solicitud
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       403:
+ *         description: API key no encontrada para el usuario
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       500:
+ *         description: Error al actualizar los archivos desde Google Drive
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ */
+router.put('/:assistantId/drive', authenticateJWT, assistantController.updateAssistantFileWithDrive);
+
+/**
+ * @swagger
  * /assistants/file/{fileId}/content:
  *   get:
  *     summary: Descargar el contenido de un archivo
