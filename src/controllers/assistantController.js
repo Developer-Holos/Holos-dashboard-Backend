@@ -87,11 +87,22 @@ const getVectorFiles = async (req, res) => {
   try {
     const openai = getOpenAIApiInstance(user.apiKey); // Instancia de OpenAI configurada
     console.log(`Obteniendo archivos del vector store con ID: ${vectorStoreId}`);
+
+    // Validar si vectorStores está definido
+    if (!openai.vectorStores || typeof openai.vectorStores.files?.list !== 'function') {
+      throw new Error('La API de OpenAI no tiene la propiedad vectorStores.files.list');
+    }
+
     const response = await openai.vectorStores.files.list(vectorStoreId);
 
+    if (!response || !response.data) {
+      throw new Error('La respuesta de la API no contiene datos');
+    }
+
+    // Devolver los datos de los archivos
     res.status(200).json(response.data);
   } catch (error) {
-    console.error('Error al obtener los archivos del vector store:', error);
+    console.error('Error al obtener los archivos del vector store:', error.message);
     res.status(500).json({ message: 'Error al obtener los archivos del vector store.' });
   }
 };
