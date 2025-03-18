@@ -9,7 +9,7 @@ const transporter = nodemailer.createTransport({
   service: 'Gmail', // Cambia esto según tu proveedor de correo
   auth: {
     user: 'recoverholos@gmail.com', // Tu correo electrónico
-    pass: 'yloj_w@P5i5uJIJ', // Tu contraseña o app password
+    pass: 'koue rajk kfqi vehs', // Tu contraseña o app password
   },
 });
 
@@ -84,10 +84,21 @@ exports.requestPasswordReset = async (req, res) => {
 
     // Enviar correo electrónico con el código
     const mailOptions = {
-      from: 'tu_email@gmail.com',
+      from: '"Holos Support" <no-reply@holos.ec>', // Cambiado a no-reply
       to: email,
-      subject: 'Password Reset Request',
-      text: `Use the following code to reset your password: ${resetCode}`,
+      subject: 'Solicitud de recuperación de contraseña',
+      text: `Hola, has solicitado recuperar tu contraseña. Usa el siguiente código para restablecerla: ${resetCode}. Este código es válido por 10 minutos.`,
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #333;">
+          <h2>Recuperación de contraseña</h2>
+          <p>Hola,</p>
+          <p>Has solicitado recuperar tu contraseña. Usa el siguiente código para restablecerla:</p>
+          <p style="font-size: 1.5em; font-weight: bold; color: #007BFF;">${resetCode}</p>
+          <p>Este código es válido por <strong>10 minutos</strong>.</p>
+          <p>Si no solicitaste este código, por favor ignora este mensaje. Este correo es enviado automáticamente, no respondas a este mensaje.</p>
+          <p>Atentamente,<br>El equipo de Holos</p>
+        </div>
+      `,
     };
 
     await transporter.sendMail(mailOptions);
