@@ -434,6 +434,30 @@ const getFileDetails = async (req, res) => {
   }
 };
 
+const downloadFileContent = async (req, res) => {
+  const { fileId } = req.params; // Obtener el ID del archivo desde los parámetros de la ruta
+  const userId = req.user.id; // Obtener el ID del usuario autenticado
+  const user = await User.findByPk(userId);
+
+  if (!user || !user.apiKey) {
+    return res.status(403).json({ message: 'API key no encontrada para el usuario.' });
+  }
+
+  try {
+    const openai = getOpenAIApiInstance(user.apiKey); // Instancia de OpenAI configurada
+    console.log(`Descargando contenido del archivo con ID: ${fileId}`);
+    const response = await openai.files.content(fileId); // Llamada a la API de OpenAI para obtener el contenido del archivo
+
+    // Configurar la respuesta para descargar el archivo
+    res.setHeader('Content-Disposition', `attachment; filename="${fileId}.txt"`);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.status(200).send(response); // Enviar el contenido del archivo al cliente
+  } catch (error) {
+    console.error('Error al descargar el contenido del archivo:', error.message);
+    res.status(500).json({ message: 'Error al descargar el contenido del archivo.' });
+  }
+};
+
 module.exports = {
   getAssistantData,
   getVectorFiles,
@@ -445,4 +469,5 @@ module.exports = {
   updateAssistantPrompt,
   updateAssistantFile,
   getFileDetails,
+  downloadFileContent,
 };

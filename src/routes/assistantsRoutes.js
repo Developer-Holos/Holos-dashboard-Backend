@@ -612,4 +612,48 @@ router.get('/vector/:vectorStoreId/files', authenticateJWT, assistantController.
  */
 router.get('/file/:fileId', authenticateJWT, assistantController.getFileDetails);
 
+/**
+ * @swagger
+ * /assistants/file/{fileId}/content:
+ *   get:
+ *     summary: Descargar el contenido de un archivo
+ *     tags: [Assistants]
+ *     parameters:
+ *       - in: path
+ *         name: fileId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID del archivo
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Contenido del archivo descargado
+ *         content:
+ *           application/octet-stream:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       403:
+ *         description: API key no encontrada para el usuario
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       500:
+ *         description: Error al descargar el contenido del archivo
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ */
+router.get('/file/:fileId/content', authenticateJWT, assistantController.downloadFileContent);
+
 module.exports = router;
