@@ -26,6 +26,10 @@ const Assistant = sequelize.define("Assistant", {
             key: 'id',
         },
     },
+    vectorStoreId: { // Nuevo campo
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
 });
 
 module.exports = Assistant;

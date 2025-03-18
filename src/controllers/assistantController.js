@@ -23,7 +23,15 @@ const getAssistantData = async (req, res) => {
     console.log(`Obteniendo asistente de la base de datos con id: ${assistantId}`);
     const assistant = await Assistant.findByPk(assistantId);
 
-    if (!assistant || assistant.name !== response.name || assistant.model !== response.model || assistant.instructions !== response.instructions) {
+    const vectorStoreId = response.tool_resources?.file_search?.vector_store_ids?.[0] || null; // Obtener vectorStoreId de la respuesta
+
+    if (
+      !assistant ||
+      assistant.name !== response.name ||
+      assistant.model !== response.model ||
+      assistant.instructions !== response.instructions ||
+      assistant.vectorStoreId !== vectorStoreId // Verificar si el vectorStoreId cambió
+    ) {
       console.log('Actualizando asistente en la base de datos');
       await Assistant.upsert({
         id: response.id,
@@ -31,6 +39,7 @@ const getAssistantData = async (req, res) => {
         model: response.model,
         instructions: response.instructions,
         userId: userId,
+        vectorStoreId, // Guardar el vectorStoreId
       });
 
       if (response.instructions) {
@@ -75,8 +84,8 @@ const getAssistantData = async (req, res) => {
 };
 
 const getVectorFiles = async (req, res) => {
-  const { vectorStoreId } = req.params;
-  const userId = req.user.id; // Obtener el ID del usuario autenticado
+  const { vectorStoreId: paramVectorStoreId } = req.params;
+  const userId = req.user.id;
   const user = await User.findByPk(userId);
 
   if (!user || !user.apiKey) {
@@ -84,22 +93,16 @@ const getVectorFiles = async (req, res) => {
   }
 
   try {
-    const openai = getOpenAIApiInstance(user.apiKey); // Instancia de OpenAI configurada
-    console.log(`Obteniendo archivos del vector store con ID: ${vectorStoreId}`);
+    const assistant = await Assistant.findOne({ where: { userId } });
+    const vectorStoreId = paramVectorStoreId || assistant?.vectorStoreId;
 
-    // Validar si vectorStores está definido
-    if (!openai.vectorStores || !openai.vectorStores.files || typeof openai.vectorStores.files.list !== 'function') {
-      console.error('La API de OpenAI no tiene la funcionalidad vectorStores.files.list');
-      return res.status(500).json({ message: 'La funcionalidad vectorStores.files.list no está disponible en la API de OpenAI.' });
+    if (!vectorStoreId) {
+      return res.status(400).json({ message: 'No se encontró un vectorStoreId asociado.' });
     }
 
+    const openai = getOpenAIApiInstance(user.apiKey);
     const response = await openai.vectorStores.files.list(vectorStoreId);
 
-    if (!response || !response.data) {
-      throw new Error('La respuesta de la API no contiene datos');
-    }
-
-    // Devolver los datos de los archivos
     res.status(200).json(response.data);
   } catch (error) {
     console.error('Error al obtener los archivos del vector store:', error.message);
@@ -359,8 +362,8 @@ const FormData = require('form-data');
 // Actualizar los archivos de un asistente (si el vector no existe)
 const updateAssistantFile = async (req, res) => {
   const { assistantId } = req.params;
-  const files = req.files; // Archivos subidos
-  const userId = req.user.id; // Obtener el ID del usuario autenticado
+  const files = req.files;
+  const userId = req.user.id;
   const user = await User.findByPk(userId);
 
   if (!user || !user.apiKey) {
@@ -372,12 +375,10 @@ const updateAssistantFile = async (req, res) => {
   }
 
   try {
-    const openai = getOpenAIApiInstance(user.apiKey); // Obtener la instancia de OpenAI configurada
-    const vectorStoreIds = [];
+    const openai = getOpenAIApiInstance(user.apiKey);
+    let vectorStoreId = null;
 
     for (const file of files) {
-      console.log(`Procesando archivo: ${file.originalname}`);
-
       const form = new FormData();
       form.append('file', fs.createReadStream(file.path), file.originalname);
       form.append('purpose', 'assistants');
@@ -389,34 +390,23 @@ const updateAssistantFile = async (req, res) => {
         },
       });
 
-      const fileResponse = response.data;
-      console.log(`Archivo subido, ID: ${fileResponse.id}`);
-      const fileId = fileResponse.id;
+      const fileId = response.data.id;
 
       const vectorStoreResponse = await openai.beta.vectorStores.create({
         file_ids: [fileId],
         name: `vector_${new Date().toLocaleDateString('es-ES').replace(/\//g, '-')}`,
       });
 
-      console.log(`Vector store creado, ID: ${vectorStoreResponse.id}`);
-      vectorStoreIds.push(vectorStoreResponse.id);
+      vectorStoreId = vectorStoreResponse.id;
     }
 
-    const existingAssistant = await openaiService.getAssistantById(user.apiKey, assistantId);
-    console.log(`Asistente obtenido: ${existingAssistant.id}`);
+    // Actualizar el vectorStoreId en la base de datos
+    await Assistant.update(
+      { vectorStoreId },
+      { where: { id: assistantId } }
+    );
 
-    const updatedData = {
-      tool_resources: {
-        file_search: {
-          vector_store_ids: vectorStoreIds,
-        },
-      },
-    };
-
-    const response = await openaiService.updateAssistant(user.apiKey, assistantId, updatedData);
-    console.log(`Asistente actualizado: ${response.id}`);
-
-    res.status(200).json(response);
+    res.status(200).json({ message: 'Archivos actualizados y vector store creado.', vectorStoreId });
   } catch (error) {
     console.error('Error al actualizar los archivos del asistente:', error);
     res.status(500).json({ message: 'Error al actualizar los archivos del asistente.' });
