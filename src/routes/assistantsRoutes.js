@@ -386,4 +386,174 @@ router.put('/:assistantId/prompt', authenticateJWT, assistantController.updateAs
  */
 router.put('/:assistantId/file', authenticateJWT, upload.array('files'), assistantController.updateAssistantFile);
 
+/**
+ * @swagger
+ * /assistants/vector/{vectorStoreId}/file/{fileId}:
+ *   delete:
+ *     summary: Eliminar un archivo de un vector
+ *     tags: [Assistants]
+ *     parameters:
+ *       - in: path
+ *         name: vectorStoreId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID del vector store
+ *       - in: path
+ *         name: fileId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID del archivo a eliminar
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Archivo eliminado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       403:
+ *         description: API key no encontrada para el usuario
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       500:
+ *         description: Error al eliminar el archivo del vector store
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ */
+router.delete('/vector/:vectorStoreId/file/:fileId', authenticateJWT, assistantController.deleteVectorFile);
+
+/**
+ * @swagger
+ * /assistants/vector/{vectorStoreId}/file:
+ *   post:
+ *     summary: Añadir un archivo a un vector existente
+ *     tags: [Assistants]
+ *     parameters:
+ *       - in: path
+ *         name: vectorStoreId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID del vector store
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               files:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                 description: Archivos a subir
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Archivos añadidos exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Los archivos son obligatorios
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       403:
+ *         description: API key no encontrada para el usuario
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       500:
+ *         description: Error al añadir archivos al vector store
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ */
+router.post('/vector/:vectorStoreId/file', authenticateJWT, upload.array('files'), assistantController.addFileToVector);
+
+/**
+ * @swagger
+ * /assistants/vector/{vectorStoreId}/files:
+ *   get:
+ *     summary: Obtener los archivos de un vector
+ *     tags: [Assistants]
+ *     parameters:
+ *       - in: path
+ *         name: vectorStoreId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID del vector store
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de archivos del vector store
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                   name:
+ *                     type: string
+ *       403:
+ *         description: API key no encontrada para el usuario
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       500:
+ *         description: Error al obtener los archivos del vector store
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ */
+router.get('/vector/:vectorStoreId/files', authenticateJWT, assistantController.getVectorFiles);
+
 module.exports = router;

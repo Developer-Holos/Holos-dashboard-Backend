@@ -11,17 +11,33 @@ const User = sequelize.define('User', {
     allowNull: false,
     unique: true,
   },
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+    validate: {
+      isEmail: true,
+    },
+  },
   password: {
     type: DataTypes.STRING,
     allowNull: false,
   },
   isAdmin: {
     type: DataTypes.BOOLEAN,
-    defaultValue: false, // false = usuario normal, true = administrador
+    defaultValue: false,
   },
   apiKey: {
     type: DataTypes.STRING,
-    allowNull: true, // Puede ser nulo si el usuario no tiene un apiKey
+    allowNull: true,
+  },
+  resetCode: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  resetCodeExpires: {
+    type: DataTypes.DATE,
+    allowNull: true,
   },
 }, {
   timestamps: true,

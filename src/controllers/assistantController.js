@@ -3,6 +3,8 @@ const openaiService = require('../middleware/openaiService');  // Importar confi
 const openai = require('openai'); // Importar el módulo openai
 const fs = require('fs'); // Importar el módulo fs
 const getOpenAIApiInstance = require('../middleware/openai_config'); // Importar la configuración de OpenAI
+const axios = require('axios');
+const FormData = require('form-data');
 
 // Obtener información de un asistente y compararla con la base de datos
 const getAssistantData = async (req, res) => {
@@ -18,14 +20,11 @@ const getAssistantData = async (req, res) => {
     }
 
     console.log(`Realizando llamada a OpenAI para obtener datos del asistente con id: ${assistantId}`);
-    // Realizar la llamada a OpenAI para obtener los datos del asistente
     const response = await openaiService.getAssistantById(user.apiKey, assistantId);
 
     console.log(`Obteniendo asistente de la base de datos con id: ${assistantId}`);
-    // Obtener el asistente de la base de datos
     const assistant = await Assistant.findByPk(assistantId);
 
-    // Comparar y actualizar si hay cambios
     if (!assistant || assistant.name !== response.name || assistant.model !== response.model || assistant.instructions !== response.instructions) {
       console.log('Actualizando asistente en la base de datos');
       await Assistant.upsert({
@@ -33,24 +32,21 @@ const getAssistantData = async (req, res) => {
         name: response.name,
         model: response.model,
         instructions: response.instructions,
-        userId: userId, // Asociar el asistente al usuario
+        userId: userId,
       });
 
-      // Guardar los prompts asociados al asistente
       if (response.instructions) {
         console.log('Obteniendo todos los prompts del asistente');
         const allPrompts = await Prompt.findAll({
           where: { assistantId: response.id },
         });
 
-        // Verificar si existe algún prompt con las mismas instrucciones
         const existingPrompt = allPrompts.find(prompt => prompt.content === response.instructions);
 
         if (!existingPrompt) {
           console.log('Las instrucciones son diferentes, creando un nuevo prompt');
           const version = (allPrompts.length > 0 ? Math.max(...allPrompts.map(prompt => prompt.version)) : 0) + 1;
 
-          // Desactivar el último prompt activo
           const lastPrompt = allPrompts.find(prompt => prompt.isActive);
           if (lastPrompt) {
             await lastPrompt.update({ isActive: false });
@@ -65,7 +61,6 @@ const getAssistantData = async (req, res) => {
           });
         } else {
           console.log('Las instrucciones son iguales, activando el prompt existente');
-          // Si las instrucciones son las mismas, solo activar el prompt existente
           await existingPrompt.update({ isActive: true });
         }
       }
@@ -78,6 +73,100 @@ const getAssistantData = async (req, res) => {
   } catch (error) {
     console.error('Error obteniendo los datos del asistente:', error);
     res.status(500).json({ message: 'Error al obtener los datos del asistente' });
+  }
+};
+
+// Obtener los archivos de un vector
+const getVectorFiles = async (req, res) => {
+  const { vectorStoreId } = req.params;
+  const userId = req.user.id; // Obtener el ID del usuario autenticado
+  const user = await User.findByPk(userId);
+
+  if (!user || !user.apiKey) {
+    return res.status(403).json({ message: 'API key no encontrada para el usuario.' });
+  }
+
+  try {
+    const openai = getOpenAIApiInstance(user.apiKey); // Instancia de OpenAI configurada
+    console.log(`Obteniendo archivos del vector store con ID: ${vectorStoreId}`);
+    const response = await openai.vectorStores.files.list(vectorStoreId);
+
+    res.status(200).json(response.data);
+  } catch (error) {
+    console.error('Error al obtener los archivos del vector store:', error);
+    res.status(500).json({ message: 'Error al obtener los archivos del vector store.' });
+  }
+};
+
+// Eliminar un archivo de un vector
+const deleteVectorFile = async (req, res) => {
+  const { vectorStoreId, fileId } = req.params;
+  const userId = req.user.id; // Obtener el ID del usuario autenticado
+  const user = await User.findByPk(userId);
+
+  if (!user || !user.apiKey) {
+    return res.status(403).json({ message: 'API key no encontrada para el usuario.' });
+  }
+
+  try {
+    const openai = getOpenAIApiInstance(user.apiKey); // Instancia de OpenAI configurada
+    console.log(`Eliminando archivo con ID: ${fileId} del vector store con ID: ${vectorStoreId}`);
+    const response = await openai.vectorStores.files.del(vectorStoreId, fileId);
+
+    res.status(200).json({ message: 'Archivo eliminado exitosamente.', response });
+  } catch (error) {
+    console.error('Error al eliminar el archivo del vector store:', error);
+    res.status(500).json({ message: 'Error al eliminar el archivo del vector store.' });
+  }
+};
+
+// Añadir un archivo a un vector existente
+const addFileToVector = async (req, res) => {
+  const { vectorStoreId } = req.params;
+  const files = req.files; // Archivos subidos
+  const userId = req.user.id; // Obtener el ID del usuario autenticado
+  const user = await User.findByPk(userId);
+
+  if (!user || !user.apiKey) {
+    return res.status(403).json({ message: 'API key no encontrada para el usuario.' });
+  }
+
+  if (!files || files.length === 0) {
+    return res.status(400).json({ message: 'Los archivos son obligatorios para añadir al vector.' });
+  }
+
+  try {
+    const openai = getOpenAIApiInstance(user.apiKey); // Instancia de OpenAI configurada
+    const fileIds = [];
+
+    for (const file of files) {
+      console.log(`Procesando archivo: ${file.originalname}`);
+
+      const form = new FormData();
+      form.append('file', fs.createReadStream(file.path), file.originalname);
+      form.append('purpose', 'assistants');
+
+      const response = await axios.post('https://api.openai.com/v1/files', form, {
+        headers: {
+          ...form.getHeaders(),
+          'Authorization': `Bearer ${user.apiKey}`,
+        },
+      });
+
+      const fileResponse = response.data;
+      console.log(`Archivo subido, ID: ${fileResponse.id}`);
+      fileIds.push(fileResponse.id);
+    }
+
+    console.log(`Añadiendo archivos al vector store con ID: ${vectorStoreId}`);
+    const vectorStoreResponse = await openai.vectorStores.fileBatches.create(vectorStoreId, {
+      file_ids: fileIds,
+    });
+
+    res.status(200).json(vectorStoreResponse);
+  } catch (error) {
+    console.error('Error al añadir archivos al vector store:', error);
+    res.status(500).json({ message: 'Error al añadir archivos al vector store.' });
   }
 };
 
@@ -258,6 +347,7 @@ const updateAssistantPrompt = async (req, res) => {
 const axios = require('axios');
 const FormData = require('form-data');
 
+// Actualizar los archivos de un asistente (si el vector no existe)
 const updateAssistantFile = async (req, res) => {
   const { assistantId } = req.params;
   const files = req.files; // Archivos subidos
@@ -279,12 +369,10 @@ const updateAssistantFile = async (req, res) => {
     for (const file of files) {
       console.log(`Procesando archivo: ${file.originalname}`);
 
-      // Crear un FormData para el archivo
       const form = new FormData();
       form.append('file', fs.createReadStream(file.path), file.originalname);
       form.append('purpose', 'assistants');
 
-      // Subir el archivo a OpenAI y obtener el ID
       const response = await axios.post('https://api.openai.com/v1/files', form, {
         headers: {
           ...form.getHeaders(),
@@ -294,28 +382,20 @@ const updateAssistantFile = async (req, res) => {
 
       const fileResponse = response.data;
       console.log(`Archivo subido, ID: ${fileResponse.id}`);
-      console.log(`Archivo subido, nombre: ${fileResponse.filename}`);
-      console.log(`Archivo subido, extensión: ${fileResponse.filename.split('.').pop().toLowerCase()}`);
-
       const fileId = fileResponse.id;
 
-      // Crear un vector store con el file_id
       const vectorStoreResponse = await openai.beta.vectorStores.create({
         file_ids: [fileId],
-        name: `vector_${new Date().toLocaleDateString('es-ES').replace(/\//g, '-')}`, // Nombre del vector store con la fecha en formato dia-mes-año
+        name: `vector_${new Date().toLocaleDateString('es-ES').replace(/\//g, '-')}`,
       });
-      
-      console.log(`Vector store creado, ID: ${vectorStoreResponse.id}`);
 
-      const vectorStoreId = vectorStoreResponse.id;
-      vectorStoreIds.push(vectorStoreId);
+      console.log(`Vector store creado, ID: ${vectorStoreResponse.id}`);
+      vectorStoreIds.push(vectorStoreResponse.id);
     }
 
-    // Obtener el asistente actual
     const existingAssistant = await openaiService.getAssistantById(user.apiKey, assistantId);
     console.log(`Asistente obtenido: ${existingAssistant.id}`);
 
-    // Actualizar el asistente con los nuevos vector_store_ids
     const updatedData = {
       tool_resources: {
         file_search: {
@@ -336,6 +416,9 @@ const updateAssistantFile = async (req, res) => {
 
 module.exports = {
   getAssistantData,
+  getVectorFiles,
+  deleteVectorFile,
+  addFileToVector,
   updateAssistantData,
   getUserAssistants,
   getAllAssistants,

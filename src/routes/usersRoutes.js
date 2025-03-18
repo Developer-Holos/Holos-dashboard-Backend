@@ -3,8 +3,6 @@ const router = express.Router();
 const usersController = require('../controllers/usersController');
 const authenticateJWT = require('../middleware/auth');
 
-
-
 /**
  * @swagger
  * components:
@@ -39,6 +37,9 @@ const authenticateJWT = require('../middleware/auth');
  *         username:
  *           type: string
  *           description: Nombre de usuario
+ *         email:
+ *           type: string
+ *           description: Correo electrónico del usuario
  *         password:
  *           type: string
  *           description: Contraseña del usuario
@@ -48,6 +49,13 @@ const authenticateJWT = require('../middleware/auth');
  *         apiKey:
  *           type: string
  *           description: API key del usuario
+ *         resetCode:
+ *           type: string
+ *           description: Código de recuperación de contraseña
+ *         resetCodeExpires:
+ *           type: string
+ *           format: date-time
+ *           description: Fecha de expiración del código de recuperación
  *   securitySchemes:
  *     bearerAuth:
  *       type: http
@@ -112,6 +120,8 @@ router.post('/', usersController.createUser);
  *                 type: string
  *               username:
  *                 type: string
+ *               email:
+ *                 type: string
  *               password:
  *                 type: string
  *               apiKey:
@@ -119,6 +129,8 @@ router.post('/', usersController.createUser);
  *     responses:
  *       201:
  *         description: Usuario registrado exitosamente
+ *       400:
+ *         description: Email ya está en uso
  *       500:
  *         description: Error al registrar el usuario
  */
@@ -152,6 +164,66 @@ router.post('/register', usersController.register);
  *         description: Error al iniciar sesión
  */
 router.post('/login', usersController.login);
+
+/**
+ * @swagger
+ * /users/request-password-reset:
+ *   post:
+ *     summary: Solicitar un código de recuperación de contraseña
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: Correo electrónico del usuario
+ *     responses:
+ *       200:
+ *         description: Código de recuperación enviado al correo electrónico
+ *       404:
+ *         description: Usuario no encontrado
+ *       500:
+ *         description: Error al procesar la solicitud
+ */
+router.post('/request-password-reset', usersController.requestPasswordReset);
+
+/**
+ * @swagger
+ * /users/reset-password:
+ *   post:
+ *     summary: Restablecer la contraseña del usuario
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: Correo electrónico del usuario
+ *               resetCode:
+ *                 type: string
+ *                 description: Código de recuperación enviado al correo
+ *               newPassword:
+ *                 type: string
+ *                 description: Nueva contraseña del usuario
+ *     responses:
+ *       200:
+ *         description: Contraseña actualizada exitosamente
+ *       400:
+ *         description: Código inválido o expirado
+ *       404:
+ *         description: Usuario no encontrado
+ *       500:
+ *         description: Error al procesar la solicitud
+ */
+router.post('/reset-password', usersController.resetPassword);
 
 /**
  * @swagger
