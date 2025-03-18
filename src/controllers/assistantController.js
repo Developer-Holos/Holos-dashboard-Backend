@@ -3,7 +3,6 @@ const openaiService = require('../middleware/openaiService');  // Importar confi
 const openai = require('openai'); // Importar el módulo openai
 const fs = require('fs'); // Importar el módulo fs
 const getOpenAIApiInstance = require('../middleware/openai_config'); // Importar la configuración de OpenAI
-const FormData = require('form-data');
 
 // Obtener información de un asistente y compararla con la base de datos
 const getAssistantData = async (req, res) => {
