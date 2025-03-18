@@ -413,6 +413,27 @@ const updateAssistantFile = async (req, res) => {
   }
 };
 
+const getFileDetails = async (req, res) => {
+  const { fileId } = req.params; // Obtener el ID del archivo desde los parámetros de la ruta
+  const userId = req.user.id; // Obtener el ID del usuario autenticado
+  const user = await User.findByPk(userId);
+
+  if (!user || !user.apiKey) {
+    return res.status(403).json({ message: 'API key no encontrada para el usuario.' });
+  }
+
+  try {
+    const openai = getOpenAIApiInstance(user.apiKey); // Instancia de OpenAI configurada
+    console.log(`Obteniendo detalles del archivo con ID: ${fileId}`);
+    const response = await openai.files.retrieve(fileId); // Llamada a la API de OpenAI para obtener detalles del archivo
+
+    res.status(200).json(response); // Devolver los detalles del archivo al frontend
+  } catch (error) {
+    console.error('Error al obtener los detalles del archivo:', error.message);
+    res.status(500).json({ message: 'Error al obtener los detalles del archivo.' });
+  }
+};
+
 module.exports = {
   getAssistantData,
   getVectorFiles,
@@ -423,4 +444,5 @@ module.exports = {
   getAllAssistants,
   updateAssistantPrompt,
   updateAssistantFile,
+  getFileDetails,
 };

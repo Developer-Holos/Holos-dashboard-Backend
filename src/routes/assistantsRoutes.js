@@ -556,4 +556,60 @@ router.post('/vector/:vectorStoreId/file', authenticateJWT, upload.array('files'
  */
 router.get('/vector/:vectorStoreId/files', authenticateJWT, assistantController.getVectorFiles);
 
+/**
+ * @swagger
+ * /assistants/file/{fileId}:
+ *   get:
+ *     summary: Obtener detalles de un archivo específico
+ *     tags: [Assistants]
+ *     parameters:
+ *       - in: path
+ *         name: fileId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID del archivo
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Detalles del archivo
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 object:
+ *                   type: string
+ *                 bytes:
+ *                   type: integer
+ *                 created_at:
+ *                   type: integer
+ *                 filename:
+ *                   type: string
+ *                 purpose:
+ *                   type: string
+ *       403:
+ *         description: API key no encontrada para el usuario
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       500:
+ *         description: Error al obtener los detalles del archivo
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ */
+router.get('/file/:fileId', authenticateJWT, assistantController.getFileDetails);
+
 module.exports = router;
