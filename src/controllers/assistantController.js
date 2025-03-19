@@ -457,7 +457,7 @@ const updateAssistantFileWithDrive = async (req, res) => {
   }
 
   try {
-    const openai = getOpenAIApiInstance(user.apiKey); // Asegúrate de usar la misma instancia que en updateAssistantFile
+    const openai = getOpenAIApiInstance(user.apiKey);
 
     // Obtener el asistente actual
     const assistant = await Assistant.findByPk(assistantId);
@@ -491,28 +491,28 @@ const updateAssistantFileWithDrive = async (req, res) => {
     // Listar los archivos en la carpeta pública
     const driveFiles = await listFilesInDriveFolder(folderId, GOOGLE_API_KEY);
 
-    let vectorStoreId = null;
+    const fileIds = []; // Acumular los IDs de los archivos subidos
 
     for (const file of driveFiles) {
       console.log(`Descargando archivo desde Google Drive: ${file.name}`);
 
       // Descargar el archivo desde Google Drive
-      let tempFilePath = await downloadFileFromDrive(file.id, file.name, GOOGLE_API_KEY); // Cambiado de const a let
-      
+      let tempFilePath = await downloadFileFromDrive(file.id, file.name, GOOGLE_API_KEY);
+
       console.log(`Archivo descargado: ${tempFilePath}`);
-      
+
       // Verificar la extensión del archivo
       const fileExtension = path.extname(tempFilePath).slice(1).toLowerCase();
-      
+
       if (!supportedExtensions.includes(fileExtension)) {
         console.log(`La extensión .${fileExtension} no está permitida. Transformando a JSON...`);
-      
+
         if (['xls', 'xlsx', 'xlsm'].includes(fileExtension)) {
           // Procesar archivo Excel y convertirlo a JSON
           const workbook = XLSX.readFile(tempFilePath);
           const jsonContent = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
           const jsonFilePath = `${tempFilePath}.json`;
-      
+
           fs.writeFileSync(jsonFilePath, JSON.stringify(jsonContent));
           tempFilePath = jsonFilePath; // Actualizar la ruta del archivo para subir el JSON
         } else {
@@ -521,11 +521,12 @@ const updateAssistantFileWithDrive = async (req, res) => {
           const base64Content = fileContent.toString('base64');
           const jsonContent = JSON.stringify({ content: base64Content });
           const jsonFilePath = `${tempFilePath}.json`;
-      
+
           fs.writeFileSync(jsonFilePath, jsonContent);
           tempFilePath = jsonFilePath; // Actualizar la ruta del archivo para subir el JSON
         }
       }
+
       // Subir el archivo (ya sea original o transformado) a OpenAI
       const form = new FormData();
       form.append('file', fs.createReadStream(tempFilePath), path.basename(tempFilePath));
@@ -539,15 +540,7 @@ const updateAssistantFileWithDrive = async (req, res) => {
       });
 
       const fileId = uploadResponse.data.id;
-      if (openai.vectorStores?.create) {
-        const vectorStoreResponse = await openai.vectorStores.create({
-          file_ids: [fileId],
-          name: `vector_${new Date().toLocaleDateString('es-ES').replace(/\//g, '-')}`,
-        });
-        vectorStoreId = vectorStoreResponse.id;
-      } else {
-        throw new Error('El método create no está disponible en openai.vectorStores');
-      }
+      fileIds.push(fileId); // Agregar el ID del archivo subido a la lista
 
       // Eliminar archivos temporales transformados
       if (tempFilePath.endsWith('.json')) {
@@ -555,19 +548,27 @@ const updateAssistantFileWithDrive = async (req, res) => {
       }
     }
 
+    // Crear un único vector store con todos los archivos subidos
+    console.log(`Creando un único vector store con los archivos: ${fileIds.join(', ')}`);
+    const vectorStoreResponse = await openai.vectorStores.create({
+      file_ids: fileIds,
+      name: `vector_${new Date().toLocaleDateString('es-ES').replace(/\//g, '-')}`,
+    });
+
+    const vectorStoreId = vectorStoreResponse.id;
+
     // Actualizar el vectorStoreId en la base de datos
     await Assistant.update(
       { vectorStoreId },
       { where: { id: assistantId } }
     );
 
-    res.status(200).json({ message: 'Archivos actualizados, vector antiguo eliminado y nuevo vector creado.', vectorStoreId });
+    res.status(200).json({ message: 'Archivos actualizados y vector store creado.', vectorStoreId });
   } catch (error) {
     console.error('Error al actualizar los archivos del asistente desde Google Drive:', error);
     res.status(500).json({ message: 'Error al actualizar los archivos del asistente desde Google Drive.' });
   }
 };
-
 // Función para extraer el ID de la carpeta desde el enlace público
 const extractFolderIdFromLink = (link) => {
   const match = link.match(/[-\w]{25,}/);
