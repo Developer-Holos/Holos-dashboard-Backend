@@ -563,9 +563,21 @@ const updateAssistantFileWithDrive = async (req, res) => {
       { where: { id: assistantId } }
     );
 
-    // Asociar el vectorStoreId al asistente en la API de OpenAI
-    console.log(`Asociando el vector store con ID: ${vectorStoreId} al asistente en OpenAI`);
-    await openaiService.updateAssistant(user.apiKey, assistantId, { vectorStoreId });
+    // Obtener el asistente actual desde OpenAI
+    const existingAssistant = await openaiService.getAssistantById(user.apiKey, assistantId);
+    console.log(`Asistente obtenido: ${existingAssistant.id}`);
+
+    // Actualizar el asistente con los nuevos vector_store_ids
+    const updatedData = {
+      tool_resources: {
+        file_search: {
+          vector_store_ids: [vectorStoreId],
+        },
+      },
+    };
+
+    const response = await openaiService.updateAssistant(user.apiKey, assistantId, updatedData);
+    console.log(`Asistente actualizado: ${response.id}`);
 
     res.status(200).json({ message: 'Archivos actualizados, vector store creado y asociado al asistente.', vectorStoreId });
   } catch (error) {
@@ -573,6 +585,8 @@ const updateAssistantFileWithDrive = async (req, res) => {
     res.status(500).json({ message: 'Error al actualizar los archivos del asistente desde Google Drive.' });
   }
 };
+
+
 // Función para extraer el ID de la carpeta desde el enlace público
 const extractFolderIdFromLink = (link) => {
   const match = link.match(/[-\w]{25,}/);
