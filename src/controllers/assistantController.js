@@ -583,8 +583,15 @@ const listFilesInDriveFolder = async (folderId, apiKey) => {
 
 // Función para descargar un archivo desde Google Drive
 const downloadFileFromDrive = async (fileId, fileName, apiKey) => {
+  const tempDir = path.join(__dirname, 'temp');
+  
+  // Verificar si el directorio 'temp' existe, si no, crearlo
+  if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir, { recursive: true });
+  }
+
   const url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${apiKey}`;
-  const tempFilePath = path.join(__dirname, 'temp', fileName);
+  const tempFilePath = path.join(tempDir, fileName);
   const writer = fs.createWriteStream(tempFilePath);
 
   const response = await axios.get(url, { responseType: 'stream' });
