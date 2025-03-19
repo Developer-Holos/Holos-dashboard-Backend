@@ -391,7 +391,7 @@ const updateAssistantFile = async (req, res) => {
 
       const fileId = response.data.id;
 
-      const vectorStoreResponse = await openai.beta.vectorStores.create({
+      const vectorStoreResponse = await openai.vectorStores.create({
         file_ids: [fileId],
         name: `vector_${new Date().toLocaleDateString('es-ES').replace(/\//g, '-')}`,
       });
@@ -544,7 +544,7 @@ const updateAssistantFileWithDrive = async (req, res) => {
 
       // Verifica si el método create está disponible
       if (openai.beta?.vectorStores?.create) {
-        const vectorStoreResponse = await openai.beta.vectorStores.create({
+        const vectorStoreResponse = await openai.vectorStores.create({
           file_ids: [fileId],
           name: `vector_${new Date().toLocaleDateString('es-ES').replace(/\//g, '-')}`,
         });
