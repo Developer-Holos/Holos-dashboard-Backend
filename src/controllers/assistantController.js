@@ -458,7 +458,7 @@ const updateAssistantFileWithDrive = async (req, res) => {
   }
 
   try {
-    const openai = getOpenAIApiInstance(user.apiKey);
+    const openai = getOpenAIApiInstance(user.apiKey); // Asegúrate de usar la misma instancia que en updateAssistantFile
 
     // Obtener el asistente actual
     const assistant = await Assistant.findByPk(assistantId);
@@ -542,12 +542,18 @@ const updateAssistantFileWithDrive = async (req, res) => {
 
       const fileId = uploadResponse.data.id;
 
-      const vectorStoreResponse = await openai.beta.vectorStores.create({
-        file_ids: [fileId],
-        name: `vector_${new Date().toLocaleDateString('es-ES').replace(/\//g, '-')}`,
-      });
+      // Verifica si el método create está disponible
+      if (openai.beta?.vectorStores?.create) {
+        const vectorStoreResponse = await openai.beta.vectorStores.create({
+          file_ids: [fileId],
+          name: `vector_${new Date().toLocaleDateString('es-ES').replace(/\//g, '-')}`,
+        });
 
-      vectorStoreId = vectorStoreResponse.id;
+        vectorStoreId = vectorStoreResponse.id;
+      } else {
+        console.error('El método create no está disponible en openai.beta.vectorStores');
+        throw new Error('La funcionalidad vectorStores.create no está disponible en la API de OpenAI.');
+      }
 
       // Eliminar archivos temporales transformados
       if (tempFilePath.endsWith('.json')) {
