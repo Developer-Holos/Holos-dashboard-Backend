@@ -563,7 +563,11 @@ const updateAssistantFileWithDrive = async (req, res) => {
       { where: { id: assistantId } }
     );
 
-    res.status(200).json({ message: 'Archivos actualizados y vector store creado.', vectorStoreId });
+    // Asociar el vectorStoreId al asistente en la API de OpenAI
+    console.log(`Asociando el vector store con ID: ${vectorStoreId} al asistente en OpenAI`);
+    await openaiService.updateAssistant(user.apiKey, assistantId, { vectorStoreId });
+
+    res.status(200).json({ message: 'Archivos actualizados, vector store creado y asociado al asistente.', vectorStoreId });
   } catch (error) {
     console.error('Error al actualizar los archivos del asistente desde Google Drive:', error);
     res.status(500).json({ message: 'Error al actualizar los archivos del asistente desde Google Drive.' });
