@@ -497,22 +497,22 @@ const updateAssistantFileWithDrive = async (req, res) => {
       console.log(`Descargando archivo desde Google Drive: ${file.name}`);
 
       // Descargar el archivo desde Google Drive
-      const tempFilePath = await downloadFileFromDrive(file.id, file.name, GOOGLE_API_KEY);
-
+      let tempFilePath = await downloadFileFromDrive(file.id, file.name, GOOGLE_API_KEY); // Cambiado de const a let
+      
       console.log(`Archivo descargado: ${tempFilePath}`);
-
+      
       // Verificar la extensión del archivo
       const fileExtension = path.extname(tempFilePath).slice(1).toLowerCase();
-
+      
       if (!supportedExtensions.includes(fileExtension)) {
         console.log(`La extensión .${fileExtension} no está permitida. Transformando a JSON...`);
-
+      
         if (['xls', 'xlsx', 'xlsm'].includes(fileExtension)) {
           // Procesar archivo Excel y convertirlo a JSON
           const workbook = XLSX.readFile(tempFilePath);
           const jsonContent = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
           const jsonFilePath = `${tempFilePath}.json`;
-
+      
           fs.writeFileSync(jsonFilePath, JSON.stringify(jsonContent));
           tempFilePath = jsonFilePath; // Actualizar la ruta del archivo para subir el JSON
         } else {
@@ -521,12 +521,11 @@ const updateAssistantFileWithDrive = async (req, res) => {
           const base64Content = fileContent.toString('base64');
           const jsonContent = JSON.stringify({ content: base64Content });
           const jsonFilePath = `${tempFilePath}.json`;
-
+      
           fs.writeFileSync(jsonFilePath, jsonContent);
           tempFilePath = jsonFilePath; // Actualizar la ruta del archivo para subir el JSON
         }
       }
-
       // Subir el archivo (ya sea original o transformado) a OpenAI
       const form = new FormData();
       form.append('file', fs.createReadStream(tempFilePath), path.basename(tempFilePath));
