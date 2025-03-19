@@ -1,6 +1,5 @@
 const { Assistant, User, Prompt } = require('../models'); // Importar el modelo Prompt
 const openaiService = require('../middleware/openaiService');  // Importar configuración de OpenAI
-const openai = require('openai'); // Importar el módulo openai
 const fs = require('fs'); // Importar el módulo fs
 const getOpenAIApiInstance = require('../middleware/openai_config'); // Importar la configuración de OpenAI
 
@@ -541,18 +540,14 @@ const updateAssistantFileWithDrive = async (req, res) => {
       });
 
       const fileId = uploadResponse.data.id;
-
-      // Verifica si el método create está disponible
-      if (openai.beta?.vectorStores?.create) {
+      if (openai.vectorStores?.create) {
         const vectorStoreResponse = await openai.vectorStores.create({
           file_ids: [fileId],
           name: `vector_${new Date().toLocaleDateString('es-ES').replace(/\//g, '-')}`,
         });
-
         vectorStoreId = vectorStoreResponse.id;
       } else {
-        console.error('El método create no está disponible en openai.beta.vectorStores');
-        throw new Error('La funcionalidad vectorStores.create no está disponible en la API de OpenAI.');
+        throw new Error('El método create no está disponible en openai.vectorStores');
       }
 
       // Eliminar archivos temporales transformados
