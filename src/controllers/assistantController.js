@@ -470,11 +470,11 @@ const updateAssistantFileWithDrive = async (req, res) => {
     if (assistant.vectorStoreId) {
       console.log(`Eliminando archivos del vector store con ID: ${assistant.vectorStoreId}`);
       const filesResponse = await openai.vectorStores.files.list(assistant.vectorStoreId);
-
+    
       if (filesResponse.data && filesResponse.data.length > 0) {
         for (const file of filesResponse.data) {
           console.log(`Eliminando archivo con ID: ${file.id}`);
-          await openai.vectorStores.files.del(assistant.vectorStoreId, file.id);
+          await openai.files.del(file.id); // Cambiado a openai.files.del
         }
       }
 
