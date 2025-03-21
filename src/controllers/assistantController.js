@@ -109,9 +109,9 @@ const getVectorFiles = async (req, res) => {
   }
 };
 
-// Eliminar un archivo de un vector
+// Eliminar un archivo
 const deleteVectorFile = async (req, res) => {
-  const { vectorStoreId, fileId } = req.params;
+  const { fileId } = req.params; // Solo se necesita el fileId
   const userId = req.user.id; // Obtener el ID del usuario autenticado
   const user = await User.findByPk(userId);
 
@@ -121,13 +121,15 @@ const deleteVectorFile = async (req, res) => {
 
   try {
     const openai = getOpenAIApiInstance(user.apiKey); // Instancia de OpenAI configurada
-    console.log(`Eliminando archivo con ID: ${fileId} del vector store con ID: ${vectorStoreId}`);
-    const response = await openai.vectorStores.files.del(vectorStoreId, fileId);
+    console.log(`Eliminando archivo con ID: ${fileId}`);
+    
+    // Llamada a la API para eliminar el archivo
+    const response = await openai.files.del(fileId);
 
     res.status(200).json({ message: 'Archivo eliminado exitosamente.', response });
   } catch (error) {
-    console.error('Error al eliminar el archivo del vector store:', error);
-    res.status(500).json({ message: 'Error al eliminar el archivo del vector store.' });
+    console.error('Error al eliminar el archivo:', error);
+    res.status(500).json({ message: 'Error al eliminar el archivo.' });
   }
 };
 

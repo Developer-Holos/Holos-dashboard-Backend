@@ -388,17 +388,11 @@ router.put('/:assistantId/file', authenticateJWT, upload.array('files'), assista
 
 /**
  * @swagger
- * /assistants/vector/{vectorStoreId}/file/{fileId}:
+ * /assistants/file/{fileId}:
  *   delete:
- *     summary: Eliminar un archivo de un vector
+ *     summary: Eliminar un archivo
  *     tags: [Assistants]
  *     parameters:
- *       - in: path
- *         name: vectorStoreId
- *         schema:
- *           type: string
- *         required: true
- *         description: ID del vector store
  *       - in: path
  *         name: fileId
  *         schema:
@@ -427,7 +421,7 @@ router.put('/:assistantId/file', authenticateJWT, upload.array('files'), assista
  *                 message:
  *                   type: string
  *       500:
- *         description: Error al eliminar el archivo del vector store
+ *         description: Error al eliminar el archivo
  *         content:
  *           application/json:
  *             schema:
@@ -436,7 +430,7 @@ router.put('/:assistantId/file', authenticateJWT, upload.array('files'), assista
  *                 message:
  *                   type: string
  */
-router.delete('/vector/:vectorStoreId/file/:fileId', authenticateJWT, assistantController.deleteVectorFile);
+router.delete('/file/:fileId', authenticateJWT, assistantController.deleteVectorFile);
 
 /**
  * @swagger
